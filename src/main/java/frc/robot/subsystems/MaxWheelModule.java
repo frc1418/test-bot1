@@ -9,33 +9,31 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs;;
 
 public class MaxWheelModule extends SubsystemBase {
 
-  private SparkMax angleMotor;
   private SparkMax speedMotor;
-
-  private AbsoluteEncoder angleEncoder;
+  private SparkMax angleMotor;
+  
   private RelativeEncoder speedEncoder;
+  private AbsoluteEncoder angleEncoder;
   
   private SparkClosedLoopController speedController;
   private SparkClosedLoopController angleController;
 
-  private double targetSpeed = 0;
-    
-  double angleSetpoint = 0;
+  private double chassisAngularOffset = 0;
 
-  public MaxWheelModule(SparkMax angleMotor, SparkMax speedMotor) {
-    this.angleMotor = angleMotor;
-    this.speedMotor = speedMotor;
+  public MaxWheelModule(int speedMotorID, int angleMotorID, double chassisAngularOffset) {
+    this.speedMotor = new SparkMax(speedMotorID, MotorType.kBrushless);
+    this.angleMotor = new SparkMax(angleMotorID, MotorType.kBrushless);
 
     this.speedEncoder = speedMotor.getEncoder();
     this.angleEncoder = angleMotor.getAbsoluteEncoder();
@@ -45,12 +43,18 @@ public class MaxWheelModule extends SubsystemBase {
 
     this.speedMotor.configure(Configs.MAXSwerveModule.speedConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     this.angleMotor.configure(Configs.MAXSwerveModule.angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+  
     this.speedEncoder.setPosition(0);
+    this.chassisAngularOffset = chassisAngularOffset;
+    
   }
 
   public void setDesiredState(SwerveModuleState desiredState) {
-    desiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
+    SwerveModuleState correctedDesiredState = new SwerveModuleState();
+    correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
+    //MAXSwerve-Java-Template said plus, but incoroporates minus for the getter methods
+    correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
+    correctedDesiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
 
     setWheelSpeed(desiredState.speedMetersPerSecond);
     setWheelAngle(desiredState.angle.getRadians());

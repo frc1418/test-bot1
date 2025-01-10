@@ -6,10 +6,14 @@ package frc.robot.subsystems;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs;;
@@ -43,6 +47,21 @@ public class MaxWheelModule extends SubsystemBase {
     this.angleMotor.configure(Configs.MAXSwerveModule.angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     this.speedEncoder.setPosition(0);
+  }
+
+  public void setDesiredState(SwerveModuleState desiredState) {
+    desiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
+
+    setWheelSpeed(desiredState.speedMetersPerSecond);
+    setWheelAngle(desiredState.angle.getRadians());
+  }
+
+  public void setWheelSpeed(double speed) {
+    speedController.setReference(speed, ControlType.kVelocity);
+  }
+
+  public void setWheelAngle(double angle) {
+    angleController.setReference(angle, ControlType.kPosition);
   }
 
   @Override

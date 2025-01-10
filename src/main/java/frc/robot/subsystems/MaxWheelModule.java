@@ -4,49 +4,45 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.spark.SparkAbsoluteEncoder;
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
-
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Configs;;
 
 public class MaxWheelModule extends SubsystemBase {
 
   private SparkMax angleMotor;
   private SparkMax speedMotor;
-  private SparkAbsoluteEncoder turningEncoder;
-  
-  private double targetSpeed = 0;
 
-  private PIDController anglePidController;
+  private AbsoluteEncoder angleEncoder;
+  private RelativeEncoder speedEncoder;
+  
+  private SparkClosedLoopController speedController;
+  private SparkClosedLoopController angleController;
+
+  private double targetSpeed = 0;
     
   double angleSetpoint = 0;
 
-  public MaxWheelModule(SparkMax angleMotor, SparkMax speedMotor) {}
+  public MaxWheelModule(SparkMax angleMotor, SparkMax speedMotor) {
+    this.angleMotor = angleMotor;
+    this.speedMotor = speedMotor;
 
-  /**
-   * Example command factory method.
-   *
-   * @return a command
-   */
-  public Command exampleMethodCommand() {
-    // Inline construction of command goes here.
-    // Subsystem::RunOnce implicitly requires `this` subsystem.
-    return runOnce(
-        () -> {
-          /* one-time action goes here */
-        });
-  }
+    this.speedEncoder = speedMotor.getEncoder();
+    this.angleEncoder = angleMotor.getAbsoluteEncoder();
 
-  /**
-   * An example method querying a boolean state of the subsystem (for example, a digital sensor).
-   *
-   * @return value of some boolean subsystem state, such as a digital sensor.
-   */
-  public boolean exampleCondition() {
-    // Query some boolean state, such as a digital sensor.
-    return false;
+    this.speedController = speedMotor.getClosedLoopController();
+    this.angleController = angleMotor.getClosedLoopController();
+
+    this.speedMotor.configure(Configs.MAXSwerveModule.speedConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    this.angleMotor.configure(Configs.MAXSwerveModule.angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    this.speedEncoder.setPosition(0);
   }
 
   @Override

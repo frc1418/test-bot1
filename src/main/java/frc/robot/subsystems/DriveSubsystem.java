@@ -6,6 +6,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
@@ -95,6 +97,27 @@ public class DriveSubsystem extends SubsystemBase {
         frontRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
         backLeftWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
         backRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+    }
+
+    public boolean getFieldCentric() {
+        return fieldCentric;
+    }
+
+    public void resetLockRot() {
+        lockedRot = odometry.getHeading().getDegrees();
+    }
+
+    public Command toggleFieldCentric() {
+        return Commands.runOnce(() -> {
+            fieldCentric = !fieldCentric;
+        });
+    }
+
+    public Command resetFieldCentric() {
+        return Commands.runOnce(() -> {
+            odometry.zeroHeading();
+            resetLockRot();
+        });
     }
 
     @Override

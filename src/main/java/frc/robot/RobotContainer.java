@@ -4,54 +4,79 @@
 
 package frc.robot;
 
+import frc.robot.Constants.DriverConstants;
+import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
+import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
-public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
-    // Configure the trigger bindings
+public class RobotContainer {
+  
+  private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+
+  SlewRateLimiter limitX = new SlewRateLimiter(6);
+  SlewRateLimiter limitY = new SlewRateLimiter(6);
+
+  private RobotBase robot;
+  
+  public RobotContainer(RobotBase robot) {
+    this.robot = robot;
     configureBindings();
   }
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    new Trigger(m_exampleSubsystem::exampleCondition)
-        .onTrue(new ExampleCommand(m_exampleSubsystem));
 
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // cancelling on release.
+  private void configureBindings() {
+    Joystick leftJoystick = new Joystick(0);
+    Joystick rightJoystick = new Joystick(1);
+    Joystick alJoystick = new Joystick(2);
+
+    JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
+    JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
+
+    driveSubsystem.setDefaultCommand(new RunCommand(() -> {
+      if (robot.isTeleopEnabled()){
+        if (driveSubsystem.getFieldCentric()) {
+          driveSubsystem.drive(
+            -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND)*DriverConstants.angleMultiplier);
+        }
+        else {
+          driveSubsystem.drive(
+            limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND)*DriverConstants.angleMultiplier);
+        }
+      }
+      else 
+      {
+        driveSubsystem.drive(0,0,0);
+      }
+      
+    }, driveSubsystem));
+
+    fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());
+    resetFieldCentricButton.onTrue(driveSubsystem.resetFieldCentric());
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
+  public double applyDeadband(double input, double deadband) {
+    if (Math.abs(input) < deadband) 
+      return 0;
+    else return 
+      input;
+  }
+
   public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
+    return null;
   }
 }

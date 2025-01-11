@@ -34,6 +34,10 @@ public class Odometry extends SubsystemBase{
         this.pose = new Pose2d();
     }
 
+    public void zeroHeading() {
+        gyro.reset();
+    }
+
     public Rotation2d getHeading() {
         return Rotation2d.fromDegrees(gyro.getAngle());
     }

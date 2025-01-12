@@ -21,7 +21,7 @@ public final class Configs {
 
             speedConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(1.0, 0.0, 0.0)
+                .pid(0.001, 0.0, 0.0)
                 .velocityFF(0.25);
 
             angleConfig

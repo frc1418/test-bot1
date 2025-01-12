@@ -49,7 +49,7 @@ public class DriveSubsystem extends SubsystemBase {
     private double lockedRot = 0;
 
     //Whatever is set here is the initial field centric parameter value
-    private boolean fieldCentric = true;
+    private boolean fieldCentric = false;
 
     public DriveSubsystem() {
         odometry = new Odometry(getModulePositions());

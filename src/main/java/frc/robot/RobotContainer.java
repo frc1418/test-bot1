@@ -42,6 +42,7 @@ public class RobotContainer {
 
     JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
     JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
+    JoystickButton turtleButton = new JoystickButton(rightJoystick, 1);
 
     driveSubsystem.setDefaultCommand(new RunCommand(() -> {
       if (robot.isTeleopEnabled()){
@@ -53,8 +54,8 @@ public class RobotContainer {
         }
         else {
           driveSubsystem.drive(
-            limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
-            limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
+            -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
             applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND)*DriverConstants.angleMultiplier);
         }
       }
@@ -63,6 +64,10 @@ public class RobotContainer {
         driveSubsystem.drive(0,0,0);
       }
       
+    }, driveSubsystem));
+
+    turtleButton.whileTrue(new RunCommand(() -> {
+      driveSubsystem.turtle();
     }, driveSubsystem));
 
     fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());

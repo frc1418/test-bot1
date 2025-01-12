@@ -6,6 +6,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -39,6 +42,22 @@ public class DriveSubsystem extends SubsystemBase {
         DrivetrainConstants.BACK_RIGHT_ENCODER_OFFSET
     );
 
+    private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
+    private final NetworkTable table = ntInstance.getTable("/components/drivetrain");
+
+    private final NetworkTableEntry ntBackRightAngleEncoder = table.getEntry("backRightAngleEncoder");
+    private final NetworkTableEntry ntBackLeftAngleEncoder = table.getEntry("backLeftAngleEncoder");
+    private final NetworkTableEntry ntFrontRightAngleEncoder = table.getEntry("frontRightAngleEncoder");
+    private final NetworkTableEntry ntFrontLeftAngleEncoder = table.getEntry("frontLeftAngleEncoder");
+
+    private final NetworkTableEntry ntBackRightSpeed = table.getEntry("backRightSpeed");
+    private final NetworkTableEntry ntBackLeftSpeed = table.getEntry("backLeftSpeed");
+    private final NetworkTableEntry ntFrontRightSpeed = table.getEntry("frontRightSpeed");
+    private final NetworkTableEntry ntFrontLeftSpeed = table.getEntry("frontLeftSpeed");
+
+    private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
+    private final NetworkTableEntry ntHeading = table.getEntry("heading");
+
     private final Odometry odometry;
 
     private ChassisSpeeds speeds = new ChassisSpeeds(0, 0, 0);
@@ -53,6 +72,8 @@ public class DriveSubsystem extends SubsystemBase {
 
     public DriveSubsystem() {
         odometry = new Odometry(getModulePositions());
+        odometry.zeroHeading();
+        resetLockRot();
     }
 
     public SwerveModulePosition[] getModulePositions() {
@@ -65,21 +86,24 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
-        if(rot == 0){
+        if(rot == 0) {
             rot = rotationController.calculate(odometry.getHeading().getDegrees(), lockedRot);
         }
-        else{
+        else {
             lockedRot = odometry.getHeading().getDegrees();
         }
+
 
         if (Math.abs(rot) > DriverConstants.ROTATION_SPEED_CAP) {
             rot = DriverConstants.ROTATION_SPEED_CAP*Math.signum(rot);
         }
 
-        if (fieldCentric) 
+        if (fieldCentric) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x, y, rot, odometry.getHeading());
-        else
+        }
+        else {
             speeds = new ChassisSpeeds(x, y, rot);
+        }
 
         SwerveModuleState[] wheelStates = DrivetrainConstants.SWERVE_KINEMATICS.toSwerveModuleStates(speeds);
         drive(wheelStates);
@@ -123,6 +147,20 @@ public class DriveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         odometry.update(getModulePositions());
+
+        ntBackLeftAngleEncoder.setDouble(backLeftWheel.getPosition().angle.getRadians());
+        ntBackRightAngleEncoder.setDouble(backRightWheel.getPosition().angle.getRadians());
+        ntFrontLeftAngleEncoder.setDouble(frontLeftWheel.getPosition().angle.getRadians());
+        ntFrontRightAngleEncoder.setDouble(frontRightWheel.getPosition().angle.getRadians());
+
+        ntBackLeftSpeed.setDouble(backLeftWheel.getState().speedMetersPerSecond);
+        ntBackRightSpeed.setDouble(backRightWheel.getState().speedMetersPerSecond);
+        ntFrontLeftSpeed.setDouble(frontLeftWheel.getState().speedMetersPerSecond);
+        ntFrontRightSpeed.setDouble(frontRightWheel.getState().speedMetersPerSecond);
+
+        ntIsFieldCentric.setBoolean(fieldCentric);
+
+        ntHeading.setDouble(odometry.getHeading().getRadians());
     }
 
     @Override

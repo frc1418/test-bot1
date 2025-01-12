@@ -31,7 +31,7 @@ public final class Constants {
     public static final int FRONT_LEFT_ANGLE_ID = 3;
     public static final int FRONT_LEFT_SPEED_ID = 4;
     public static final Translation2d FRONT_LEFT_LOC = new Translation2d(0.238125, 0.238125);
-    public static final double FRONT_LEFT_ENCODER_OFFSET = 3.783+Math.PI/2  ;
+    public static final double FRONT_LEFT_ENCODER_OFFSET = 3.783+Math.PI/2;
     
     public static final SwerveDriveKinematics SWERVE_KINEMATICS = new SwerveDriveKinematics(
       FRONT_LEFT_LOC,

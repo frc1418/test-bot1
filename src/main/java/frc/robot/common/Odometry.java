@@ -21,10 +21,6 @@ public class Odometry extends SubsystemBase{
     private final AHRS gyro;
     private SwerveModulePosition[] modulePositions;
 
-    private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
-    private final NetworkTable table = ntInstance.getTable("/components/Odometry");
-    private final NetworkTableEntry heading = table.getEntry("heading");
-
     private Pose2d pose;
 
     public Odometry(SwerveModulePosition[] modulePositions) {
@@ -39,7 +35,7 @@ public class Odometry extends SubsystemBase{
     }
 
     public Rotation2d getHeading() {
-        return Rotation2d.fromDegrees(gyro.getAngle());
+        return Rotation2d.fromDegrees(gyro.getAngle()).unaryMinus();
     }
 
     public void update(SwerveModulePosition[] modulePositions) {

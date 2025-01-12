@@ -56,6 +56,12 @@ public class MaxWheelModule extends SubsystemBase {
         new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
   }
 
+  public SwerveModuleState getState() {
+    return new SwerveModuleState(
+        speedEncoder.getVelocity(),
+        new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
+  }
+
   public void setDesiredState(SwerveModuleState desiredState) {
     SwerveModuleState correctedDesiredState = new SwerveModuleState();
     correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
@@ -63,8 +69,8 @@ public class MaxWheelModule extends SubsystemBase {
     correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
     correctedDesiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
 
-    setWheelSpeed(desiredState.speedMetersPerSecond);
-    setWheelAngle(desiredState.angle.getRadians());
+    setWheelSpeed(correctedDesiredState.speedMetersPerSecond);
+    setWheelAngle(correctedDesiredState.angle.getRadians());
   }
 
   public void setWheelSpeed(double speed) {

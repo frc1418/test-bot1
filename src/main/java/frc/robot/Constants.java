@@ -16,22 +16,22 @@ public final class Constants {
     public static final int BACK_RIGHT_ANGLE_ID = 7;
     public static final int BACK_RIGHT_SPEED_ID = 8;
     public static final Translation2d BACK_RIGHT_LOC = new Translation2d(-0.238125, -0.238125);
-    public static final double BACK_RIGHT_ENCODER_OFFSET = 0.0;//0.845; 
+    public static final double BACK_RIGHT_ENCODER_OFFSET = 0.631-Math.PI/2;
 
     public static final int FRONT_RIGHT_ANGLE_ID = 5;
     public static final int FRONT_RIGHT_SPEED_ID = 6;
     public static final Translation2d FRONT_RIGHT_LOC = new Translation2d(0.238125, -0.238125);
-    public static final double FRONT_RIGHT_ENCODER_OFFSET = 0.0;//0.586;
+    public static final double FRONT_RIGHT_ENCODER_OFFSET = 3.672;
     
     public static final int BACK_LEFT_ANGLE_ID = 1;
     public static final int BACK_LEFT_SPEED_ID = 2;
     public static final Translation2d BACK_LEFT_LOC = new Translation2d(-0.238125, 0.238125);
-    public static final double BACK_LEFT_ENCODER_OFFSET = 0.0;//0.654+0.25;
+    public static final double BACK_LEFT_ENCODER_OFFSET = 5.339;
     
     public static final int FRONT_LEFT_ANGLE_ID = 3;
     public static final int FRONT_LEFT_SPEED_ID = 4;
     public static final Translation2d FRONT_LEFT_LOC = new Translation2d(0.238125, 0.238125);
-    public static final double FRONT_LEFT_ENCODER_OFFSET = 0.0;//0.852;
+    public static final double FRONT_LEFT_ENCODER_OFFSET = 3.783+Math.PI/2  ;
     
     public static final SwerveDriveKinematics SWERVE_KINEMATICS = new SwerveDriveKinematics(
       FRONT_LEFT_LOC,

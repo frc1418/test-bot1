@@ -11,7 +11,7 @@ public final class Constants {
   public final static class DrivetrainConstants{
 
     public static final double DRIFT_DEADBAND = 0.1;
-    public static final double ROTATION_DEADBAND = 0.002;
+    public static final double ROTATION_DEADBAND = 0.05;
 
     public static final int BACK_RIGHT_ANGLE_ID = 7;
     public static final int BACK_RIGHT_SPEED_ID = 8;

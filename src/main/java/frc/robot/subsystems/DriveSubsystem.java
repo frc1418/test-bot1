@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
@@ -14,6 +13,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+
 import frc.robot.common.Odometry;
 
 public class DriveSubsystem extends SubsystemBase {
@@ -57,6 +58,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
+    private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
 
     private final Odometry odometry;
 
@@ -160,7 +162,8 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntIsFieldCentric.setBoolean(fieldCentric);
 
-        ntHeading.setDouble(odometry.getHeading().getRadians());
+        ntHeading.setDouble(odometry.getHeading().getDegrees());
+        ntLockedRot.setDouble(lockedRot);
     }
 
     @Override

@@ -4,49 +4,81 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.spark.SparkAbsoluteEncoder;
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Configs;
 
 public class MaxWheelModule extends SubsystemBase {
 
-  private SparkMax angleMotor;
   private SparkMax speedMotor;
-  private SparkAbsoluteEncoder turningEncoder;
+  private SparkMax angleMotor;
   
-  private double targetSpeed = 0;
+  private RelativeEncoder speedEncoder;
+  private AbsoluteEncoder angleEncoder;
+  
+  private SparkClosedLoopController speedController;
+  private SparkClosedLoopController angleController;
 
-  private PIDController anglePidController;
+  private double chassisAngularOffset = 0;
+
+  public MaxWheelModule(int speedMotorID, int angleMotorID, double chassisAngularOffset) {
+    this.speedMotor = new SparkMax(speedMotorID, MotorType.kBrushless);
+    this.angleMotor = new SparkMax(angleMotorID, MotorType.kBrushless);
+
+    this.speedEncoder = speedMotor.getEncoder();
+    this.angleEncoder = angleMotor.getAbsoluteEncoder();
+
+    this.speedController = speedMotor.getClosedLoopController();
+    this.angleController = angleMotor.getClosedLoopController();
+
+    this.speedMotor.configure(Configs.MAXSwerveModule.speedConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    this.angleMotor.configure(Configs.MAXSwerveModule.angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+  
+    this.speedEncoder.setPosition(0);
+    this.chassisAngularOffset = chassisAngularOffset;
     
-  double angleSetpoint = 0;
-
-  public MaxWheelModule(SparkMax angleMotor, SparkMax speedMotor) {}
-
-  /**
-   * Example command factory method.
-   *
-   * @return a command
-   */
-  public Command exampleMethodCommand() {
-    // Inline construction of command goes here.
-    // Subsystem::RunOnce implicitly requires `this` subsystem.
-    return runOnce(
-        () -> {
-          /* one-time action goes here */
-        });
   }
 
-  /**
-   * An example method querying a boolean state of the subsystem (for example, a digital sensor).
-   *
-   * @return value of some boolean subsystem state, such as a digital sensor.
-   */
-  public boolean exampleCondition() {
-    // Query some boolean state, such as a digital sensor.
-    return false;
+  public SwerveModulePosition getPosition() {
+    return new SwerveModulePosition(
+        speedEncoder.getPosition(),
+        new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
+  }
+
+  public SwerveModuleState getState() {
+    return new SwerveModuleState(
+        speedEncoder.getVelocity(),
+        new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
+  }
+
+  public void setDesiredState(SwerveModuleState desiredState) {
+    SwerveModuleState correctedDesiredState = new SwerveModuleState();
+    correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
+    //MAXSwerve-Java-Template said plus, but incoroporates minus for the getter methods
+    correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
+    correctedDesiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
+
+    setWheelSpeed(correctedDesiredState.speedMetersPerSecond);
+    setWheelAngle(correctedDesiredState.angle.getRadians());
+  }
+
+  public void setWheelSpeed(double speed) {
+    speedController.setReference(speed, ControlType.kVelocity);
+  }
+
+  public void setWheelAngle(double angle) {
+    angleController.setReference(angle, ControlType.kPosition);
   }
 
   @Override

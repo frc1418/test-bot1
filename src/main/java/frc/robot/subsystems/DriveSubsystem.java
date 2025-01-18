@@ -13,8 +13,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-
 import frc.robot.common.Odometry;
 
 public class DriveSubsystem extends SubsystemBase {
@@ -107,6 +105,8 @@ public class DriveSubsystem extends SubsystemBase {
             speeds = new ChassisSpeeds(x, y, rot);
         }
 
+        speeds = ChassisSpeeds.discretize(speeds, 0.02);
+        
         SwerveModuleState[] wheelStates = DrivetrainConstants.SWERVE_KINEMATICS.toSwerveModuleStates(speeds);
         drive(wheelStates);
     }
@@ -162,8 +162,8 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntIsFieldCentric.setBoolean(fieldCentric);
 
-        ntHeading.setDouble(odometry.getHeading().getDegrees());
-        ntLockedRot.setDouble(lockedRot);
+        ntHeading.setDouble(-odometry.getHeading().getDegrees());
+        ntLockedRot.setDouble(-lockedRot);
     }
 
     @Override

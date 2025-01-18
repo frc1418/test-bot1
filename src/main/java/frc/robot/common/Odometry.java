@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.common.LimelightHelpers;
+import frc.robot.common.LimelightHelpers.PoseEstimate;
 
 
 
@@ -52,6 +53,10 @@ public class Odometry extends SubsystemBase{
         return gyro.getRotation2d();
     }
 
+    public Rotation2d getEstimatedRot() {
+        return poseEstimator.getEstimatedPosition().getRotation();
+    }
+
     public void update(SwerveModulePosition[] modulePositions) {
         rejectVision = false;
 
@@ -60,23 +65,22 @@ public class Odometry extends SubsystemBase{
         setRobotOrientation(gyro.getAngle(), gyro.getRate(), gyro.getPitch(), 0, gyro.getRoll(), 0);
         LimelightHelpers.PoseEstimate aprilTagInfo = LimelightHelpers.getBotPoseEstimate();
 
-        if (aprilTagInfo != null) {
-            if (aprilTagInfo.rawFiducials.length == 1) {
-                double ambiguity = aprilTagInfo.rawFiducials[0].ambiguity;
-                if (ambiguity > 0.9) {
-                    rejectVision = true;
-                }
-            }
-            else if (gyro.getRate() > 720) {
-                rejectVision = true;
-            }
-            else if (aprilTagInfo.tagCount == 0) {
-                rejectVision = true;
-            }
-        }
-        else {
+        if (aprilTagInfo == null) {
             rejectVision = true;
         }
+        else if (aprilTagInfo.rawFiducials.length == 1) {
+            double ambiguity = aprilTagInfo.rawFiducials[0].ambiguity;
+            if (ambiguity > 0.9) {
+                rejectVision = true;
+            }
+        }
+        else if (gyro.getRate() > 720) {
+            rejectVision = true;
+        }
+        else if (aprilTagInfo.tagCount == 0) {
+            rejectVision = true;
+        }
+
 
         if (!rejectVision) {
             System.out.println("X (m): " + aprilTagInfo.pose.getX());

@@ -6,10 +6,15 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleArrayEntry;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.TimestampedDoubleArray;
 
 public class LimelightHelpers {
+
+    private static NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+
+    private static DoubleArrayEntry mt2 = table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry(new double[0]);
 
     public static class RawFiducial {
         public int id = 0;
@@ -68,10 +73,8 @@ public class LimelightHelpers {
         }
     }
 
-    public static PoseEstimate getBotPoseEstimate() {
-        DoubleArrayEntry poseEntry = LimelightHelpers.getLimelightDoubleArrayEntry("limelight", "wpiBlue_MegaTag2");
-        
-        TimestampedDoubleArray tsValue = poseEntry.getAtomic();
+    public static PoseEstimate getBotPoseEstimate() {        
+        TimestampedDoubleArray tsValue = mt2.getAtomic();
         double[] poseArray = tsValue.value;
         long timestamp = tsValue.timestamp;
         var pose = toPose2D(poseArray);

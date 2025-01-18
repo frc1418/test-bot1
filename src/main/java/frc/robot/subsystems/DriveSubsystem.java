@@ -58,6 +58,7 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
     private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
+    private final NetworkTableEntry ntEstimatedRot = table.getEntry("estimatedRot");
 
     private final Odometry odometry;
 
@@ -174,6 +175,7 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntHeading.setDouble(-odometry.getHeading().getDegrees());
         ntLockedRot.setDouble(-lockedRot);
+        ntEstimatedRot.setDouble(-odometry.getEstimatedRot().getDegrees());
     }
 
     @Override

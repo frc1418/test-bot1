@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
@@ -63,7 +64,7 @@ public class DriveSubsystem extends SubsystemBase {
     private ChassisSpeeds speeds = new ChassisSpeeds(0, 0, 0);
 
     //This PID controller is used to keep the robot facing the same direction when not rotating
-    private PIDController rotationController = new PIDController(0.04, 0, 0); 
+    private PIDController rotationController = new PIDController(DriverConstants.baseCorrector, 0, 0); 
 
     private double lockedRot = 0;
 
@@ -86,28 +87,37 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
-        if(rot == 0) {
-            rot = rotationController.calculate(odometry.getHeading().getDegrees(), lockedRot);
+        double xSpeed = x*DriverConstants.maxSpeedMetersPerSecond;
+        double ySpeed = y*DriverConstants.maxSpeedMetersPerSecond;
+        double rotSpeed = rot*DriverConstants.maxAngularSpeed;
+
+        if(rotSpeed == 0) {
+            if (Math.hypot(x, y) > 0.25) {
+                rotationController.setP(Math.hypot(x,y)*DriverConstants.correctiveFactor);
+            }
+            else {
+                rotationController.setP(DriverConstants.baseCorrector);
+            }
+            rotSpeed = rotationController.calculate(odometry.getHeading().getDegrees(), lockedRot);
+            if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
+                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rot);
+            }
         }
         else {
             lockedRot = odometry.getHeading().getDegrees();
         }
 
-
-        if (Math.abs(rot) > DriverConstants.ROTATION_SPEED_CAP) {
-            rot = DriverConstants.ROTATION_SPEED_CAP*Math.signum(rot);
-        }
-
         if (fieldCentric) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x, y, rot, odometry.getHeading());
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getHeading());
         }
         else {
-            speeds = new ChassisSpeeds(x, y, rot);
+            speeds = new ChassisSpeeds(xSpeed, ySpeed, rotSpeed);
         }
 
         speeds = ChassisSpeeds.discretize(speeds, 0.02);
         
         SwerveModuleState[] wheelStates = DrivetrainConstants.SWERVE_KINEMATICS.toSwerveModuleStates(speeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(wheelStates, DriverConstants.maxSpeedMetersPerSecond);
         drive(wheelStates);
     }
 

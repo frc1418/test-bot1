@@ -11,7 +11,7 @@ public final class Constants {
   public final static class DrivetrainConstants{
 
     public static final double DRIFT_DEADBAND = 0.1;
-    public static final double ROTATION_DEADBAND = 0.05;
+    public static final double ROTATION_DEADBAND = 0.03;
 
     public static final int BACK_RIGHT_ANGLE_ID = 7;
     public static final int BACK_RIGHT_SPEED_ID = 8;
@@ -42,9 +42,11 @@ public final class Constants {
   }
 
   public final static class DriverConstants {
-    public final static double speedMultiplier = 3;
-    public final static double angleMultiplier = 4;
-    public static final double ROTATION_SPEED_CAP = 5;
+    public final static double maxSpeedMetersPerSecond = 4.8;
+    public final static double maxAngularSpeed = 2*Math.PI;
+    public final static double maxCorrectiveAngularSpeed = Math.PI;
+    public final static double correctiveFactor = 0.16;
+    public final static double baseCorrector = 0.04;
   }
 
   public final static class EncoderConstants {

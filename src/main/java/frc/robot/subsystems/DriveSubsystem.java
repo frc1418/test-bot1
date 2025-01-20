@@ -174,7 +174,7 @@ public class DriveSubsystem extends SubsystemBase {
         ntIsFieldCentric.setBoolean(fieldCentric);
 
         ntHeading.setDouble(odometry.getGyroHeading().getDegrees());
-        ntLockedRot.setDouble(-lockedRot);
+        ntLockedRot.setDouble(lockedRot);
         ntEstimatedRot.setDouble(odometry.getRot().getDegrees());
     }
 

@@ -6,7 +6,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleArrayEntry;
 import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.TimestampedDoubleArray;
 
@@ -73,6 +72,19 @@ public class LimelightHelpers {
         }
     }
 
+    public static void setRobotOrientation(double yaw, double yawRate, double pitch, double pitchRate, double roll, double rollRate) {
+        double[] entries = new double[6];
+        entries[0] = yaw;
+        entries[1] = yawRate;
+        entries[2] = pitch;
+        entries[3] = pitchRate;
+        entries[4] = roll;
+        entries[5] = rollRate;
+
+        NetworkTableInstance.getDefault().getTable("limelight").getEntry("robot_orientation_set").setDoubleArray(entries);
+        NetworkTableInstance.getDefault().flush();
+    }
+
     public static PoseEstimate getBotPoseEstimate() {        
         TimestampedDoubleArray tsValue = mt2.getAtomic();
         double[] poseArray = tsValue.value;
@@ -117,10 +129,6 @@ public class LimelightHelpers {
     
         return new PoseEstimate(pose, adjustedTimestamp, latency, tagCount, tagSpan, tagDist, tagArea, rawFiducials);
     }
-
-        private static DoubleArrayEntry getLimelightDoubleArrayEntry(String tableName, String entryName) {
-            return NetworkTableInstance.getDefault().getTable(tableName).getDoubleArrayTopic(entryName).getEntry(new double[0]);
-        }
 
         private static double extractArrayEntry(double[] inData, int position){
             if(inData.length < position+1)

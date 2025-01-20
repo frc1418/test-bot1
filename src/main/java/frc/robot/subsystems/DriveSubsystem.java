@@ -99,17 +99,17 @@ public class DriveSubsystem extends SubsystemBase {
             else {
                 rotationController.setP(DriverConstants.baseCorrector);
             }
-            rotSpeed = rotationController.calculate(odometry.getHeading().getDegrees(), lockedRot);
+            rotSpeed = rotationController.calculate(odometry.getGyroHeading().getDegrees(), lockedRot);
             if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
-                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rot);
+                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
             }
         }
         else {
-            lockedRot = odometry.getHeading().getDegrees();
+            lockedRot = odometry.getGyroHeading().getDegrees();
         }
 
         if (fieldCentric) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getHeading());
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getGyroHeading());
         }
         else {
             speeds = new ChassisSpeeds(xSpeed, ySpeed, rotSpeed);
@@ -141,7 +141,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void resetLockRot() {
-        lockedRot = odometry.getHeading().getDegrees();
+        lockedRot = odometry.getGyroHeading().getDegrees();
     }
 
     public Command toggleFieldCentric() {
@@ -173,9 +173,9 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntIsFieldCentric.setBoolean(fieldCentric);
 
-        ntHeading.setDouble(-odometry.getHeading().getDegrees());
+        ntHeading.setDouble(odometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(-lockedRot);
-        ntEstimatedRot.setDouble(-odometry.getEstimatedRot().getDegrees());
+        ntEstimatedRot.setDouble(odometry.getRot().getDegrees());
     }
 
     @Override

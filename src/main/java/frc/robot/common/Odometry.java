@@ -40,8 +40,8 @@ public class Odometry extends SubsystemBase{
         this.gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
         this.pose = new Pose2d();
         this.poseEstimator = new SwerveDrivePoseEstimator(
-            DrivetrainConstants.SWERVE_KINEMATICS, getHeading(), modulePositions, pose,
-            VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
+            DrivetrainConstants.SWERVE_KINEMATICS, getGyroHeading(), modulePositions, pose,
+            VecBuilder.fill(0.05, 0.05, 0),
             VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
     }
 
@@ -49,20 +49,20 @@ public class Odometry extends SubsystemBase{
         gyro.reset();
     }
 
-    public Rotation2d getHeading() {
+    public Rotation2d getGyroHeading() {
         return gyro.getRotation2d();
     }
 
-    public Rotation2d getEstimatedRot() {
+    public Rotation2d getRot() {
         return poseEstimator.getEstimatedPosition().getRotation();
     }
 
     public void update(SwerveModulePosition[] modulePositions) {
         rejectVision = false;
 
-        poseEstimator.update(getHeading(), modulePositions);
+        poseEstimator.update(getGyroHeading(), modulePositions);
 
-        setRobotOrientation(gyro.getAngle(), gyro.getRate(), gyro.getPitch(), 0, gyro.getRoll(), 0);
+        setRobotOrientation(getRot().getDegrees(), 0, 0, 0, 0, 0);
         LimelightHelpers.PoseEstimate aprilTagInfo = LimelightHelpers.getBotPoseEstimate();
 
         if (aprilTagInfo == null) {
@@ -74,7 +74,7 @@ public class Odometry extends SubsystemBase{
                 rejectVision = true;
             }
         }
-        else if (gyro.getRate() > 720) {
+        else if (Math.abs(gyro.getRate()) > 720) {
             rejectVision = true;
         }
         else if (aprilTagInfo.tagCount == 0) {
@@ -87,6 +87,7 @@ public class Odometry extends SubsystemBase{
             System.out.println("Y (m): " + aprilTagInfo.pose.getY());
             System.out.println("Rot (degrees): " + aprilTagInfo.pose.getRotation().getDegrees());
             System.out.println("Time (sec): " + aprilTagInfo.timestampSeconds);
+            poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
             poseEstimator.addVisionMeasurement(aprilTagInfo.pose, aprilTagInfo.timestampSeconds);
         }
     }
@@ -108,6 +109,6 @@ public class Odometry extends SubsystemBase{
     }
 
     public void resetOdometry(Pose2d pose, SwerveModulePosition[] modulePositions) {
-        poseEstimator.resetPosition(getHeading(), modulePositions, pose);
+        poseEstimator.resetPosition(getGyroHeading(), modulePositions, pose);
     }
 }

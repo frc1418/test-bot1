@@ -67,9 +67,9 @@ public class DriveSubsystem extends SubsystemBase {
     //This PID controller is used to keep the robot facing the same direction when not rotating
     private PIDController rotationController = new PIDController(DriverConstants.baseCorrector, 0, 0); 
 
-    private double lockedRot = 0;
+    private double lockedRot;
 
-    //Whatever is set here is the initial field centric parameter value
+    private boolean correctRot = true;
     private boolean fieldCentric = false;
 
     public DriveSubsystem() {
@@ -99,9 +99,14 @@ public class DriveSubsystem extends SubsystemBase {
             else {
                 rotationController.setP(DriverConstants.baseCorrector);
             }
-            rotSpeed = rotationController.calculate(odometry.getGyroHeading().getDegrees(), lockedRot);
-            if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
-                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
+            if (Math.abs(lockedRot-odometry.getGyroHeading().getDegrees()) > 180) {
+                correctRot = false;
+            }
+            if (correctRot) {
+                rotSpeed = rotationController.calculate(odometry.getGyroHeading().getDegrees(), lockedRot);
+                if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
+                    rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
+                }
             }
         }
         else {
@@ -140,6 +145,10 @@ public class DriveSubsystem extends SubsystemBase {
         return fieldCentric;
     }
 
+    public double getLockedRot() {
+        return lockedRot;
+    }
+
     public void resetLockRot() {
         lockedRot = odometry.getGyroHeading().getDegrees();
     }
@@ -159,7 +168,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        odometry.update(getModulePositions());
+        odometry.update(getModulePositions(), lockedRot);
 
         ntBackLeftAngleEncoder.setDouble(backLeftWheel.getPosition().angle.getRadians());
         ntBackRightAngleEncoder.setDouble(backRightWheel.getPosition().angle.getRadians());
@@ -175,7 +184,7 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntHeading.setDouble(odometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(lockedRot);
-        ntEstimatedRot.setDouble(odometry.getRot().getDegrees());
+        ntEstimatedRot.setDouble(odometry.getEstimatedRot().getDegrees());
     }
 
     @Override

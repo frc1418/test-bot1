@@ -7,12 +7,21 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DrivetrainConstants;
 
-
-
 public class Odometry extends SubsystemBase{
+
+    private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
+    private final NetworkTable table = ntInstance.getTable("/components/odometry");
+
+    private final NetworkTableEntry ntX = table.getEntry("xFromBlueOrigin (m)");
+    private final NetworkTableEntry ntY = table.getEntry("yFromBlueOrigin (m)");
+    private final NetworkTableEntry ntAngle = table.getEntry("degreesFromRedWall (degrees)");
+    private final NetworkTableEntry ntTime = table.getEntry("timeFromInit (sec)");
 
     private final AHRS gyro;
 
@@ -37,17 +46,21 @@ public class Odometry extends SubsystemBase{
         return gyro.getRotation2d();
     }
 
-    public Rotation2d getRot() {
+    public double getYaw() {
+        return gyro.getYaw();
+    }
+
+    public Rotation2d getEstimatedRot() {
         return poseEstimator.getEstimatedPosition().getRotation();
     }
 
-    public void update(SwerveModulePosition[] modulePositions) {
+    public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
         boolean rejectVision = false;
         boolean megaTag2 = true;
 
         poseEstimator.update(getGyroHeading(), modulePositions);
 
-        LimelightHelpers.SetRobotOrientation("limelight", gyro.getYaw(), 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation("limelight", poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
         LimelightHelpers.PoseEstimate aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
 
         if (aprilTagInfo == null) {
@@ -68,10 +81,10 @@ public class Odometry extends SubsystemBase{
 
         if (!rejectVision) {
             if (megaTag2) {
-                System.out.println("X (m): " + aprilTagInfo.pose.getX());
-                System.out.println("Y (m): " + aprilTagInfo.pose.getY());
-                System.out.println("Rot (degrees): " + aprilTagInfo.pose.getRotation().getDegrees());
-                System.out.println("Time (sec): " + aprilTagInfo.timestampSeconds);
+                ntX.setDouble(aprilTagInfo.pose.getX());
+                ntY.setDouble(aprilTagInfo.pose.getY());
+                ntAngle.setDouble(aprilTagInfo.pose.getRotation().getDegrees());
+                ntTime.setDouble(aprilTagInfo.timestampSeconds);
                 poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
                 poseEstimator.addVisionMeasurement(
                     aprilTagInfo.pose,

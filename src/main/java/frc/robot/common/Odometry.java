@@ -60,6 +60,8 @@ public class Odometry extends SubsystemBase{
 
         poseEstimator.update(getGyroHeading(), modulePositions);
 
+        // TODO: Incoroporate mt1 orientation into poseEstimator by averaging values over time and excluding outliers
+
         LimelightHelpers.SetRobotOrientation("limelight", poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
         LimelightHelpers.PoseEstimate aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
 
@@ -81,9 +83,9 @@ public class Odometry extends SubsystemBase{
 
         if (!rejectVision) {
             if (megaTag2) {
-                ntX.setDouble(aprilTagInfo.pose.getX());
-                ntY.setDouble(aprilTagInfo.pose.getY());
-                ntAngle.setDouble(aprilTagInfo.pose.getRotation().getDegrees());
+                ntX.setDouble(poseEstimator.getEstimatedPosition().getX());
+                ntY.setDouble(poseEstimator.getEstimatedPosition().getY());
+                ntAngle.setDouble(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
                 ntTime.setDouble(aprilTagInfo.timestampSeconds);
                 poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
                 poseEstimator.addVisionMeasurement(

@@ -1,5 +1,10 @@
 package frc.robot.common;
 
+import static edu.wpi.first.units.Units.Rotation;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.studica.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -21,11 +26,24 @@ public class Odometry extends SubsystemBase{
     private final NetworkTableEntry ntX = table.getEntry("xFromBlueOrigin (m)");
     private final NetworkTableEntry ntY = table.getEntry("yFromBlueOrigin (m)");
     private final NetworkTableEntry ntAngle = table.getEntry("degreesFromRedWall (degrees)");
-    private final NetworkTableEntry ntTime = table.getEntry("timeFromInit (sec)");
+    private final NetworkTableEntry ntGyroWorking = table.getEntry("gyroWorking");
+    private final NetworkTableEntry ntCorrectRot = table.getEntry("correctRot");
 
     private final AHRS gyro;
 
     private Pose2d pose;
+
+    private boolean correctRot = true;
+
+    private boolean rotCorrected = false;
+
+    private int frameCount = 0;
+
+    private Rotation2d gyroOffset = new Rotation2d(0);
+
+    private LimelightHelpers.PoseEstimate aprilTagInfo;
+
+    private List<Rotation2d> errorValues = new ArrayList<>();
 
     private final SwerveDrivePoseEstimator poseEstimator;
 
@@ -41,18 +59,47 @@ public class Odometry extends SubsystemBase{
 
     public void zeroHeading() {
         gyro.reset();
+        gyroOffset = new Rotation2d(0);
+    }
+
+    public void getRotError() {
+        if (aprilTagInfo.tagCount > 0 && gyro.isConnected()) {
+            Rotation2d rotation = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").pose.getRotation();
+            Rotation2d error = rotation.minus(getGyroHeading().minus(gyroOffset));
+            errorValues.add(error);
+        }
+    }
+
+    public void correctError() {
+        if (errorValues.size() > 0 && gyro.isConnected()) {
+            double avg = 0;
+            for (int i = 0; i < errorValues.size(); i++) {
+                avg += errorValues.get(i).getDegrees();
+            }
+            avg /= errorValues.size();
+            gyroOffset = Rotation2d.fromDegrees(avg);
+            System.out.println("ROT CORRECTED");
+            System.out.println("Avg error: " + avg);
+            correctRot = true;
+            rotCorrected = true;
+            errorValues.clear();
+        }
     }
 
     public Rotation2d getGyroHeading() {
-        return gyro.getRotation2d();
-    }
-
-    public double getYaw() {
-        return gyro.getYaw();
+        return gyro.getRotation2d().plus(gyroOffset);
     }
 
     public Pose2d getPose() {
         return poseEstimator.getEstimatedPosition();
+    }
+
+    public boolean getRotCorrected() {
+        return rotCorrected;
+    }
+
+    public boolean getCorrectRot() {
+        return correctRot;
     }
 
     public Rotation2d getEstimatedRot() {
@@ -60,15 +107,22 @@ public class Odometry extends SubsystemBase{
     }
 
     public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
+        rotCorrected = false;
         boolean rejectVision = false;
-        boolean megaTag2 = true;
+        boolean megaTag2 = false;
 
-        poseEstimator.update(getGyroHeading(), modulePositions);
+        aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+        LimelightHelpers.SetRobotOrientation("limelight", getGyroHeading().getDegrees(), 0, 0, 0, 0, 0);
 
-        // TODO: Incoroporate mt1 orientation into poseEstimator by averaging values over time and excluding outliers
+        if (!gyro.isConnected()) {
+            correctRot = false;
+            System.out.println("GYRO DISCONNECTED");
+        }
 
-        LimelightHelpers.SetRobotOrientation("limelight", poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        LimelightHelpers.PoseEstimate aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+        if (correctRot) {
+            megaTag2 = true;
+            poseEstimator.update(getGyroHeading(), modulePositions);
+        }
 
         if (aprilTagInfo == null) {
             rejectVision = true;
@@ -94,20 +148,22 @@ public class Odometry extends SubsystemBase{
                     aprilTagInfo.timestampSeconds
                 );
             }
-            else {
-                LimelightHelpers.PoseEstimate limelightMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
-                if (limelightMeasurement.tagCount >= 2) {  // Only trust measurement if we see multiple tags
-                    poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.7, 0.7, 9999999));
-                    poseEstimator.addVisionMeasurement(
-                        limelightMeasurement.pose,
-                        limelightMeasurement.timestampSeconds
-                    );
-                }
+        }
+
+        if (!correctRot) {
+            System.out.println("INCORRECT ROT");
+            getRotError();
+            frameCount++;
+            if (frameCount > 25) {
+                correctError();
+                frameCount = 0;
             }
         }
+
         ntX.setDouble(poseEstimator.getEstimatedPosition().getX());
         ntY.setDouble(poseEstimator.getEstimatedPosition().getY());
-        ntAngle.setDouble(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
+        ntGyroWorking.setBoolean(gyro.isConnected());
+        ntCorrectRot.setBoolean(correctRot);
     }
 
     public void resetOdometry(Pose2d pose, SwerveModulePosition[] modulePositions) {

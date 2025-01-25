@@ -47,6 +47,7 @@ public class RobotContainer {
     JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
     JoystickButton turtleButton = new JoystickButton(rightJoystick, 1);
     JoystickButton alignByCoralStationButton = new JoystickButton(rightJoystick, 2);
+    JoystickButton fixHeadingButton = new JoystickButton(rightJoystick, 3);
 
 
     //Positive x moves bot forwards and positive y moves bot to the left
@@ -79,6 +80,8 @@ public class RobotContainer {
     alignByCoralStationButton.whileTrue(alignByCoralStation);
     fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());
     resetFieldCentricButton.onTrue(driveSubsystem.resetFieldCentric());
+    fixHeadingButton.whileTrue(driveSubsystem.getRotError());
+    fixHeadingButton.onFalse(driveSubsystem.correctError());
   }
 
   public double applyDeadband(double input, double deadband) {

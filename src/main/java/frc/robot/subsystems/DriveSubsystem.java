@@ -69,7 +69,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     private double lockedRot;
 
-    private boolean correctRot = true;
     private boolean fieldCentric = false;
 
     public DriveSubsystem() {
@@ -95,28 +94,28 @@ public class DriveSubsystem extends SubsystemBase {
             rotSpeed =  DriverConstants.maxAngularSpeed*Math.signum(rotSpeed);
         } 
 
-        if(rotSpeed == 0) {
+        if (odometry.getRotCorrected()) {
+            resetLockRot();
+        }
+
+        if(rotSpeed == 0 && odometry.getCorrectRot()) {
             if (Math.hypot(x, y) > 0.25) {
                 rotationController.setP(Math.hypot(x,y)*DriverConstants.correctiveFactor);
             }
             else {
                 rotationController.setP(DriverConstants.baseCorrector);
             }
-            if (Math.abs(lockedRot-odometry.getGyroHeading().getDegrees()) > 180) {
-                correctRot = false;
-            }
-            if (correctRot) {
-                rotSpeed = rotationController.calculate(odometry.getGyroHeading().getDegrees(), lockedRot);
-                if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
-                    rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
-                }
+            rotSpeed = rotationController.calculate(odometry.getGyroHeading().getDegrees(), lockedRot);
+            if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
+                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
             }
         }
         else {
-            lockedRot = odometry.getGyroHeading().getDegrees();
+            resetLockRot();
         }
 
-        if (fieldCentric) {
+
+        if (fieldCentric && odometry.getCorrectRot()) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getGyroHeading());
         }
         else {
@@ -162,6 +161,18 @@ public class DriveSubsystem extends SubsystemBase {
 
     public void resetLockRot() {
         lockedRot = odometry.getGyroHeading().getDegrees();
+    }
+
+    public Command getRotError() {
+        return Commands.runOnce(() -> {
+            odometry.getRotError();
+        });
+    }
+
+    public Command correctError() {
+        return Commands.runOnce(() -> {
+            odometry.correctError();
+        });
     }
 
     public Command toggleFieldCentric() {

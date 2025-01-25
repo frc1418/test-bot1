@@ -116,7 +116,6 @@ public class Odometry extends SubsystemBase{
 
         if (!gyro.isConnected()) {
             correctRot = false;
-            System.out.println("GYRO DISCONNECTED");
         }
 
         if (correctRot) {
@@ -151,7 +150,6 @@ public class Odometry extends SubsystemBase{
         }
 
         if (!correctRot) {
-            System.out.println("INCORRECT ROT");
             getRotError();
             frameCount++;
             if (frameCount > 25) {

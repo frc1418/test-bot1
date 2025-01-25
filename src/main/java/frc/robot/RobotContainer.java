@@ -25,7 +25,7 @@ public class RobotContainer {
   
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
 
-  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16, 6, 90, 0.2, 0.014, 0.02);
+  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 90, 0.3, 0.025, 0.02);
 
   SlewRateLimiter limitX = new SlewRateLimiter(6);
   SlewRateLimiter limitY = new SlewRateLimiter(6);

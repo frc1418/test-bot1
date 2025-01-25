@@ -159,6 +159,10 @@ public class DriveSubsystem extends SubsystemBase {
         return lockedRot;
     }
 
+    public boolean getCorrectRot() {
+        return odometry.getCorrectRot();
+    }
+
     public void resetLockRot() {
         lockedRot = odometry.getGyroHeading().getDegrees();
     }

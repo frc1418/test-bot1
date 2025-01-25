@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
+import frc.robot.commands.AlignByAprilTagGyro;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.DriveSubsystem;
@@ -23,6 +24,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class RobotContainer {
   
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+
+  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16, 6, 90, 0.2, 0.014, 0.02);
 
   SlewRateLimiter limitX = new SlewRateLimiter(6);
   SlewRateLimiter limitY = new SlewRateLimiter(6);
@@ -43,7 +46,10 @@ public class RobotContainer {
     JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
     JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
     JoystickButton turtleButton = new JoystickButton(rightJoystick, 1);
+    JoystickButton alignByCoralStationButton = new JoystickButton(rightJoystick, 2);
 
+
+    //Positive x moves bot forwards and positive y moves bot to the left
     driveSubsystem.setDefaultCommand(new RunCommand(() -> {
       if (robot.isTeleopEnabled()){
         if (driveSubsystem.getFieldCentric()) {
@@ -70,6 +76,7 @@ public class RobotContainer {
       driveSubsystem.turtle();
     }, driveSubsystem));
 
+    alignByCoralStationButton.whileTrue(alignByCoralStation);
     fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());
     resetFieldCentricButton.onTrue(driveSubsystem.resetFieldCentric());
   }

@@ -74,7 +74,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     public DriveSubsystem() {
         odometry = new Odometry(getModulePositions());
-        odometry.zeroHeading();
         resetLockRot();
     }
 
@@ -91,6 +90,10 @@ public class DriveSubsystem extends SubsystemBase {
         double xSpeed = x*DriverConstants.maxSpeedMetersPerSecond;
         double ySpeed = y*DriverConstants.maxSpeedMetersPerSecond;
         double rotSpeed = rot*DriverConstants.maxAngularSpeed;
+
+        if (rotSpeed > DriverConstants.maxAngularSpeed) {
+            rotSpeed =  DriverConstants.maxAngularSpeed*Math.signum(rotSpeed);
+        } 
 
         if(rotSpeed == 0) {
             if (Math.hypot(x, y) > 0.25) {
@@ -141,8 +144,16 @@ public class DriveSubsystem extends SubsystemBase {
         backRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
     }
 
+    public void setFieldCentric(boolean fieldCentric) {
+        this.fieldCentric = fieldCentric;
+    }
+
     public boolean getFieldCentric() {
         return fieldCentric;
+    }
+
+    public Odometry getOdometry() {
+        return odometry;
     }
 
     public double getLockedRot() {

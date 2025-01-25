@@ -31,9 +31,10 @@ public class Odometry extends SubsystemBase{
 
     public Odometry(SwerveModulePosition[] modulePositions) {
         this.gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+        zeroHeading();
         this.pose = new Pose2d();
         this.poseEstimator = new SwerveDrivePoseEstimator(
-            DrivetrainConstants.SWERVE_KINEMATICS, getGyroHeading(), modulePositions, pose,
+            DrivetrainConstants.SWERVE_KINEMATICS, new Rotation2d(0), modulePositions, pose,
             VecBuilder.fill(0.05, 0.05, 0),
             VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
     }
@@ -48,6 +49,10 @@ public class Odometry extends SubsystemBase{
 
     public double getYaw() {
         return gyro.getYaw();
+    }
+
+    public Pose2d getPose() {
+        return poseEstimator.getEstimatedPosition();
     }
 
     public Rotation2d getEstimatedRot() {
@@ -83,10 +88,6 @@ public class Odometry extends SubsystemBase{
 
         if (!rejectVision) {
             if (megaTag2) {
-                ntX.setDouble(poseEstimator.getEstimatedPosition().getX());
-                ntY.setDouble(poseEstimator.getEstimatedPosition().getY());
-                ntAngle.setDouble(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
-                ntTime.setDouble(aprilTagInfo.timestampSeconds);
                 poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
                 poseEstimator.addVisionMeasurement(
                     aprilTagInfo.pose,
@@ -104,6 +105,9 @@ public class Odometry extends SubsystemBase{
                 }
             }
         }
+        ntX.setDouble(poseEstimator.getEstimatedPosition().getX());
+        ntY.setDouble(poseEstimator.getEstimatedPosition().getY());
+        ntAngle.setDouble(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
     }
 
     public void resetOdometry(Pose2d pose, SwerveModulePosition[] modulePositions) {

@@ -98,7 +98,7 @@ public class DriveSubsystem extends SubsystemBase {
             resetLockRot();
         }
 
-        if(rotSpeed == 0 && odometry.getCorrectRot()) {
+        if(rotSpeed == 0 && odometry.getCorrectRot() && Math.abs(odometry.getGyroHeading().getDegrees() - lockedRot) < 180) {
             if (Math.hypot(x, y) > 0.25) {
                 rotationController.setP(Math.hypot(x,y)*DriverConstants.correctiveFactor);
             }

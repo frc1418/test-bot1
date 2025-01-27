@@ -15,10 +15,10 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants.DrivetrainConstants;
 
-public class Odometry extends SubsystemBase{
+public class Odometry {
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     private final NetworkTable table = ntInstance.getTable("/components/odometry");
@@ -107,57 +107,69 @@ public class Odometry extends SubsystemBase{
     }
 
     public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
-        rotCorrected = false;
-        boolean rejectVision = false;
-        boolean megaTag2 = false;
+        if (DriverStation.isEnabled()) {
+            rotCorrected = false;
+            boolean rejectVision = false;
+            boolean megaTag2 = false;
+            boolean megaTag1 = false;
 
-        aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-        LimelightHelpers.SetRobotOrientation("limelight", getGyroHeading().getDegrees(), 0, 0, 0, 0, 0);
+            aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+            LimelightHelpers.SetRobotOrientation("limelight", getGyroHeading().getDegrees(), 0, 0, 0, 0, 0);
 
-        if (!gyro.isConnected()) {
-            correctRot = false;
-        }
+            if (!gyro.isConnected()) {
+                correctRot = false;
+            }
 
-        if (correctRot) {
-            megaTag2 = true;
-            poseEstimator.update(getGyroHeading(), modulePositions);
-        }
+            if (correctRot) {
+                megaTag2 = true;
+                poseEstimator.update(getGyroHeading(), modulePositions);
+            }
 
-        if (aprilTagInfo == null) {
-            rejectVision = true;
-        }
-        else if (aprilTagInfo.rawFiducials.length == 1) {
-            double ambiguity = aprilTagInfo.rawFiducials[0].ambiguity;
-            if (ambiguity > 0.9) {
+            if (aprilTagInfo == null) {
                 rejectVision = true;
             }
-        }
-        else if (Math.abs(gyro.getRate()) > 720) {
-            rejectVision = true;
-        }
-        else if (aprilTagInfo.tagCount == 0) {
-            rejectVision = true;
-        }
+            else if (aprilTagInfo.rawFiducials.length == 1) {
+                double ambiguity = aprilTagInfo.rawFiducials[0].ambiguity;
+                if (ambiguity > 0.9) {
+                    rejectVision = true;
+                }
+            }
+            else if (Math.abs(gyro.getRate()) > 720) {
+                rejectVision = true;
+            }
+            else if (aprilTagInfo.tagCount == 0) {
+                rejectVision = true;
+            }
 
-        if (!rejectVision) {
-            if (megaTag2) {
-                poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
-                poseEstimator.addVisionMeasurement(
-                    aprilTagInfo.pose,
-                    aprilTagInfo.timestampSeconds
-                );
+            if (!rejectVision) {
+                if (megaTag2) {
+                    poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
+                    poseEstimator.addVisionMeasurement(
+                        aprilTagInfo.pose,
+                        aprilTagInfo.timestampSeconds
+                    );
+                }
+                else if (megaTag1) {
+                    LimelightHelpers.PoseEstimate limelightMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+                    if (limelightMeasurement.tagCount >= 2) {  // Only trust measurement if we see multiple tags
+                        poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.7, 0.7, 9999999));
+                        poseEstimator.addVisionMeasurement(
+                            limelightMeasurement.pose,
+                            limelightMeasurement.timestampSeconds
+                        );
+                    }
+                }
+            }
+
+            if (!correctRot) {
+                getRotError();
+                frameCount++;
+                if (frameCount > 25) {
+                    correctError();
+                    frameCount = 0;
+                }
             }
         }
-
-        if (!correctRot) {
-            getRotError();
-            frameCount++;
-            if (frameCount > 25) {
-                correctError();
-                frameCount = 0;
-            }
-        }
-
         ntX.setDouble(poseEstimator.getEstimatedPosition().getX());
         ntY.setDouble(poseEstimator.getEstimatedPosition().getY());
         ntGyroWorking.setBoolean(gyro.isConnected());

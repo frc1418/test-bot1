@@ -30,6 +30,7 @@ public class MaxWheelModule extends SubsystemBase {
   private SparkClosedLoopController speedController;
   private SparkClosedLoopController angleController;
 
+  // This is an interestingly named variable. Is it just the offset of the module encoder?
   private double chassisAngularOffset = 0;
 
   public MaxWheelModule(int speedMotorID, int angleMotorID, double chassisAngularOffset) {
@@ -63,9 +64,11 @@ public class MaxWheelModule extends SubsystemBase {
   }
 
   public void setDesiredState(SwerveModuleState desiredState) {
+    // Creating new objects can be expenvie. You might be able to just use the desiredState object here and modify it
     SwerveModuleState correctedDesiredState = new SwerveModuleState();
     correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
     //MAXSwerve-Java-Template said plus, but incoroporates minus for the getter methods
+    // Why not set the zeroOffset parameter of the angle config?
     correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
     correctedDesiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
 

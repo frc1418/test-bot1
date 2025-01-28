@@ -18,7 +18,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants.DrivetrainConstants;
 
-public class Odometry {
+public class FieldSpaceOdometry {
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     private final NetworkTable table = ntInstance.getTable("/components/odometry");
@@ -47,7 +47,7 @@ public class Odometry {
 
     private final SwerveDrivePoseEstimator poseEstimator;
 
-    public Odometry(SwerveModulePosition[] modulePositions) {
+    public FieldSpaceOdometry(SwerveModulePosition[] modulePositions) {
         this.gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
         zeroHeading();
         this.pose = new Pose2d();
@@ -100,6 +100,10 @@ public class Odometry {
 
     public boolean getCorrectRot() {
         return correctRot;
+    }
+
+    public void setCorrectRot(boolean correctRot) {
+        this.correctRot = correctRot;
     }
 
     public Rotation2d getEstimatedRot() {

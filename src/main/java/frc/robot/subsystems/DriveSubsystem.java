@@ -90,6 +90,8 @@ public class DriveSubsystem extends SubsystemBase {
         double ySpeed = y*DriverConstants.maxSpeedMetersPerSecond;
         double rotSpeed = rot*DriverConstants.maxAngularSpeed;
 
+        // This doesn't account for rotSpeed < -DriverConstants.maxAngularSpeed
+        // Not sure if this is necessary, since rot will always be between -1 and 1, right?
         if (rotSpeed > DriverConstants.maxAngularSpeed) {
             rotSpeed =  DriverConstants.maxAngularSpeed*Math.signum(rotSpeed);
         } 

@@ -62,6 +62,7 @@ public class Odometry {
         gyroOffset = new Rotation2d(0);
     }
 
+    // This method is a getter, but doesn't return anything. It should be named something like 'updateRotError'
     public void getRotError() {
         if (aprilTagInfo.tagCount > 0 && gyro.isConnected()) {
             Rotation2d rotation = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").pose.getRotation();
@@ -94,10 +95,13 @@ public class Odometry {
         return poseEstimator.getEstimatedPosition();
     }
 
+    // It's helpful to name boolean functions starting with 'is' instead of 'get'
+    // isRotCorrected reads clearer
     public boolean getRotCorrected() {
         return rotCorrected;
     }
 
+    // Why are there two functions that return seemingly the same values?
     public boolean getCorrectRot() {
         return correctRot;
     }
@@ -113,6 +117,8 @@ public class Odometry {
             boolean megaTag2 = false;
             boolean megaTag1 = false;
 
+            // The javadocs for getBotPoseEstimate say to call SetRobotOrientation _before_ you call this method
+            // aprilTagInfo is a poor variable name. It is a pose estimate. Maybe poseFromAprilTags
             aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
             LimelightHelpers.SetRobotOrientation("limelight", getGyroHeading().getDegrees(), 0, 0, 0, 0, 0);
 

@@ -19,6 +19,7 @@ public final class Configs {
                 .positionConversionFactor(EncoderConstants.ROTATIONS_TO_METERS)
                 .velocityConversionFactor(EncoderConstants.ROTATIONS_TO_METERS/60.0);
 
+            // You should run SysId to get these values for each individual module
             speedConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(0.001, 0.0, 0.0)

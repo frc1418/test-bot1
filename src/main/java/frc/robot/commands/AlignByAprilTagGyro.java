@@ -4,6 +4,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.DriverConstants;
@@ -33,6 +34,7 @@ public class AlignByAprilTagGyro extends Command {
     SlewRateLimiter limitX = new SlewRateLimiter(5);
     SlewRateLimiter limitY = new SlewRateLimiter(5);
 
+    // P, I, and D should probably not be a part of the constructor. They should be constant for all alignments, right?
     public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D) {
 
         this.swerveDrive = swerveDrive;
@@ -53,6 +55,7 @@ public class AlignByAprilTagGyro extends Command {
     // Called when the command is initially scheduled.
     @Override
     public void initialize() {
+        // Probably a good idea to just make a robot centric drive function that you can call so you don't have to worry about restoring the field-centric state
         this.startedFieldCentric = swerveDrive.getFieldCentric();
         this.swerveDrive.setFieldCentric(false);
 
@@ -63,6 +66,7 @@ public class AlignByAprilTagGyro extends Command {
     @Override
     public void execute() {
         if (swerveDrive.getCorrectRot()) {
+            // Why are you making a new pose from `odometry.getPose()`? Why not just use `odometry.getPose()`?
             Pose2d robotPose = new Pose2d(
                 new Translation2d(odometry.getPose().getX(), odometry.getPose().getY()),
                 odometry.getPose().getRotation());
@@ -73,6 +77,12 @@ public class AlignByAprilTagGyro extends Command {
             double x;
             double y;
             double rot;
+
+            // You can simplify a lot of this code by using the built in geometry classes
+            Transform2d poseDiff = targetPose.minus(robotPose);
+            Rotation2d angle = poseDiff.getRotation();
+            Translation2d translation = poseDiff.getTranslation();
+
 
             double dx = targetPose.getX() - robotPose.getX();
             double dy =  targetPose.getY() - robotPose.getY();

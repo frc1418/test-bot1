@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Rotation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.studica.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
@@ -16,6 +17,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.DrivetrainConstants;
 
 public class FieldSpaceOdometry {
@@ -25,7 +27,6 @@ public class FieldSpaceOdometry {
 
     private final NetworkTableEntry ntX = table.getEntry("xFromBlueOrigin (m)");
     private final NetworkTableEntry ntY = table.getEntry("yFromBlueOrigin (m)");
-    private final NetworkTableEntry ntAngle = table.getEntry("degreesFromRedWall (degrees)");
     private final NetworkTableEntry ntGyroWorking = table.getEntry("gyroWorking");
     private final NetworkTableEntry ntCorrectRot = table.getEntry("correctRot");
 
@@ -47,7 +48,7 @@ public class FieldSpaceOdometry {
 
     private final SwerveDrivePoseEstimator poseEstimator;
 
-    public FieldSpaceOdometry(SwerveModulePosition[] modulePositions) {
+    public FieldSpaceOdometry(SwerveModulePosition[] modulePositions, Optional<Alliance> ally) {    
         this.gyro = new AHRS(AHRS.NavXComType.kUSB1);
         zeroHeading();
         this.pose = new Pose2d();
@@ -55,6 +56,11 @@ public class FieldSpaceOdometry {
             DrivetrainConstants.SWERVE_KINEMATICS, new Rotation2d(0), modulePositions, pose,
             VecBuilder.fill(0.05, 0.05, 0),
             VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
+        if (ally.isPresent()) {
+            if (ally.get() == Alliance.Blue) {
+                gyroOffset = Rotation2d.fromDegrees(180);
+            }
+        }
     }
 
     public void zeroHeading() {

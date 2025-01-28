@@ -79,7 +79,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
-        odometry = new FieldSpaceOdometry(getModulePositions());
+        odometry = new FieldSpaceOdometry(getModulePositions(), ally);
         resetLockRot();
     }
 

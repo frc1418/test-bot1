@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -9,12 +11,14 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import frc.robot.common.Odometry;
+import frc.robot.common.FieldSpaceOdometry;
 
 public class DriveSubsystem extends SubsystemBase {
     
@@ -60,7 +64,7 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
     private final NetworkTableEntry ntEstimatedRot = table.getEntry("estimatedRot");
 
-    private final Odometry odometry;
+    private final FieldSpaceOdometry odometry;
 
     private ChassisSpeeds speeds = new ChassisSpeeds(0, 0, 0);
 
@@ -69,10 +73,13 @@ public class DriveSubsystem extends SubsystemBase {
 
     private double lockedRot;
 
+    private Optional<Alliance> ally;
+
     private boolean fieldCentric = false;
 
     public DriveSubsystem() {
-        odometry = new Odometry(getModulePositions());
+        ally = DriverStation.getAlliance();
+        odometry = new FieldSpaceOdometry(getModulePositions());
         resetLockRot();
     }
 
@@ -116,7 +123,14 @@ public class DriveSubsystem extends SubsystemBase {
 
 
         if (fieldCentric && odometry.getCorrectRot()) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getGyroHeading());
+            if (ally.isPresent()) {
+                if (ally.get() == Alliance.Red) {
+                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, new Rotation2d(odometry.getGyroHeading().getRadians()+Math.PI));
+                }
+                else {
+                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, odometry.getGyroHeading());
+                }
+            }
         }
         else {
             speeds = new ChassisSpeeds(xSpeed, ySpeed, rotSpeed);
@@ -151,7 +165,7 @@ public class DriveSubsystem extends SubsystemBase {
         return fieldCentric;
     }
 
-    public Odometry getOdometry() {
+    public FieldSpaceOdometry getOdometry() {
         return odometry;
     }
 
@@ -189,6 +203,7 @@ public class DriveSubsystem extends SubsystemBase {
         return Commands.runOnce(() -> {
             odometry.zeroHeading();
             resetLockRot();
+            odometry.setCorrectRot(true);
         });
     }
 

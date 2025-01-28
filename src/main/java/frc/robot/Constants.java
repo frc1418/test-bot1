@@ -44,6 +44,7 @@ public final class Constants {
   }
 
   public final static class DriverConstants {
+    public final static double maxAccel = 5.0;
     public final static double maxSpeedMetersPerSecond = 4.8;
     public final static double maxAngularSpeed = 2*Math.PI;
     public final static double maxCorrectiveAngularSpeed = Math.PI;

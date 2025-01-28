@@ -6,8 +6,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.DriverConstants;
-import frc.robot.common.Odometry;
+import frc.robot.common.FieldSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
 
 public class AlignByAprilTagGyro extends Command {
@@ -18,22 +17,21 @@ public class AlignByAprilTagGyro extends Command {
     PIDController speedRotController;
 
     DriveSubsystem swerveDrive;
-    Odometry odometry;
+    FieldSpaceOdometry odometry;
 
     double targetX;
     double targetY;
 
     double targetRot;
-    double approachAngle;
 
     boolean startedFieldCentric;
 
     PIDController speedController;
 
-    SlewRateLimiter limitX = new SlewRateLimiter(5);
-    SlewRateLimiter limitY = new SlewRateLimiter(5);
+    SlewRateLimiter limitX;
+    SlewRateLimiter limitY;
 
-    public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D) {
+    public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
 
         this.swerveDrive = swerveDrive;
         this.odometry = swerveDrive.getOdometry();
@@ -41,9 +39,12 @@ public class AlignByAprilTagGyro extends Command {
         this.targetY = targetY;
         this.targetRot = targetRot;
        
+        limitX = new SlewRateLimiter(maxAccel);
+        limitY = new SlewRateLimiter(maxAccel);
         speedController = new PIDController(P, I, D);
-        speedController.setTolerance(0.1);
-        speedRotController = new PIDController(0.005, 0.0004, 0);
+        speedController.setTolerance(0.2);
+        speedRotController = new PIDController(0.005, 0.001, 0);
+        speedRotController.setTolerance(0.1);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);

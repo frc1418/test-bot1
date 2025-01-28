@@ -48,7 +48,7 @@ public class FieldSpaceOdometry {
     private final SwerveDrivePoseEstimator poseEstimator;
 
     public FieldSpaceOdometry(SwerveModulePosition[] modulePositions) {
-        this.gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+        this.gyro = new AHRS(AHRS.NavXComType.kUSB1);
         zeroHeading();
         this.pose = new Pose2d();
         this.poseEstimator = new SwerveDrivePoseEstimator(

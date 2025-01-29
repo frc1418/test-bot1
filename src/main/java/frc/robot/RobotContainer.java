@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.commands.AlignByAprilTagGyro;
+import frc.robot.commands.AlignByAprilTagLL;
 import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -29,6 +30,7 @@ public class RobotContainer {
   Joystick alJoystick = new Joystick(2);
 
   private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 90, 0.7, 0.1, 0.1, 3);
+  private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.2, -1.75, 0.3, 0.1, 0.1, 30);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
 
   private RobotBase robot;
@@ -41,6 +43,7 @@ public class RobotContainer {
   private void configureBindings() {
     JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
     JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
+    JoystickButton alignByAprilTagLLButton = new JoystickButton(leftJoystick, 3);
     JoystickButton alignRotButton = new JoystickButton(rightJoystick, 1);
     JoystickButton alignByCoralStationButton = new JoystickButton(rightJoystick, 2);
     JoystickButton fixHeadingButton = new JoystickButton(rightJoystick, 3);
@@ -67,6 +70,7 @@ public class RobotContainer {
       driveSubsystem.turtle();
     }, driveSubsystem));
 
+    alignByAprilTagLLButton.whileTrue(alignByAprilTagLL);
     alignRotButton.whileTrue(alignRot);
     alignByCoralStationButton.whileTrue(alignByCoralStation);
     fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());

@@ -6,10 +6,10 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.common.FieldSpaceOdometry;
+import frc.robot.common.TargetSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
 
-public class AlignByAprilTagGyro extends Command {
+public class AlignByAprilTagLL extends Command {
 
     PIDController speedXController;
     PIDController speedYController;
@@ -17,34 +17,29 @@ public class AlignByAprilTagGyro extends Command {
     PIDController speedRotController;
 
     DriveSubsystem swerveDrive;
-    FieldSpaceOdometry odometry;
+    TargetSpaceOdometry odometry;
 
     double targetX;
     double targetY;
-
     double targetRot;
 
     boolean startedFieldCentric;
 
     PIDController speedController;
 
-    SlewRateLimiter limitX;
-    SlewRateLimiter limitY;
+    SlewRateLimiter limitX = new SlewRateLimiter(1.5);
+    SlewRateLimiter limitY = new SlewRateLimiter(1.5);
 
-    public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
+    public AlignByAprilTagLL(DriveSubsystem swerveDrive, double targetX, double targetY, double P, double I, double D, double targetRot) {
 
         this.swerveDrive = swerveDrive;
-        this.odometry = swerveDrive.getOdometry();
+        this.odometry = swerveDrive.getTargetOdometry();
         this.targetX = targetX;
         this.targetY = targetY;
         this.targetRot = targetRot;
-       
-        limitX = new SlewRateLimiter(maxAccel);
-        limitY = new SlewRateLimiter(maxAccel);
+    
         speedController = new PIDController(P, I, D);
-        speedController.setTolerance(0.2);
         speedRotController = new PIDController(0.01, 0, 0);
-        speedRotController.setTolerance(0.01);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);
@@ -63,35 +58,34 @@ public class AlignByAprilTagGyro extends Command {
     // Called every time the scheduler runs while the command is scheduled.
     @Override
     public void execute() {
-        if (swerveDrive.getCorrectRot()) {
-            Pose2d robotPose = new Pose2d(
-                new Translation2d(odometry.getPose().getX(), odometry.getPose().getY()),
-                odometry.getPose().getRotation());
 
-            Pose2d targetPose;
-            targetPose = new Pose2d(new Translation2d(targetX, targetY), Rotation2d.fromDegrees(targetRot));
-            
-            double x;
-            double y;
-            double rot;
+        Pose2d robotPose = new Pose2d(
+            new Translation2d(odometry.getPose().getX(), odometry.getPose().getY()),
+            odometry.getPose().getRotation());
 
-            double dx = targetPose.getX() - robotPose.getX();
-            double dy =  targetPose.getY() - robotPose.getY();
+        Pose2d targetPose;
+        targetPose = new Pose2d(new Translation2d(targetX, targetY), Rotation2d.fromDegrees(targetRot));
+        
+        double x;
+        double y;
+        double rot;
 
-            double distance = Math.hypot(dx, dy);
-            double angleToTarget = Math.atan2(dy, dx) * 180 / Math.PI;
+        double dx = -(targetPose.getX() - robotPose.getX());
+        double dy =  targetPose.getY() - robotPose.getY();
 
-            rot = speedRotController.calculate(odometry.getGyroHeading().getDegrees(), targetRot);
+        double distance = Math.hypot(dx, dy);
+        double angleToTarget = Math.atan2(dx, dy) * 180 / Math.PI;
 
-            double speed = speedController.calculate(0, distance);
+        rot = -speedRotController.calculate(robotPose.getRotation().getDegrees(), targetRot);
 
-            Rotation2d direction = Rotation2d.fromDegrees(angleToTarget - odometry.getGyroHeading().getDegrees());
+        double speed = speedController.calculate(0, distance);
 
-            x = (direction.getCos() * speed);
-            y = (direction.getSin() * speed);
+        Rotation2d direction = Rotation2d.fromDegrees(angleToTarget + robotPose.getRotation().getDegrees());
 
-            swerveDrive.drive(limitX.calculate(x), limitY.calculate(y), rot);        
-        }
+        x = direction.getCos() * speed;
+        y = direction.getSin() * speed;
+
+        swerveDrive.drive(limitX.calculate(x), limitY.calculate(y), rot);        
     }
 
     // Called once the command ends or is interrupted.

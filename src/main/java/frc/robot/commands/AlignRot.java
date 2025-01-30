@@ -6,8 +6,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import frc.robot.RobotContainer;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
@@ -22,7 +22,7 @@ public class AlignRot extends Command {
     DriveSubsystem swerveDrive;
     FieldSpaceOdometry odometry;
 
-    Joystick leftJoystick;
+    CommandJoystick leftJoystick;
 
     double targetRot;
 
@@ -31,7 +31,7 @@ public class AlignRot extends Command {
     SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
     SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
-    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, Joystick leftJoystick, double targetRot) {
+    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, double targetRot) {
 
         ally = DriverStation.getAlliance();
         this.robotContainer = robotContainer;

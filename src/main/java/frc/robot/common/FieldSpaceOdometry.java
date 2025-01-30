@@ -1,11 +1,8 @@
 package frc.robot.common;
 
-import static edu.wpi.first.units.Units.Rotation;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import com.studica.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -36,13 +33,13 @@ public class FieldSpaceOdometry {
 
     private boolean correctRot = true;
 
-    private boolean rotCorrected = false;
+    private boolean rotJustCorrected = false;
 
     private int frameCount = 0;
 
     private Rotation2d gyroOffset = new Rotation2d(0);
 
-    private LimelightHelpers.PoseEstimate aprilTagInfo;
+    private LimelightHelpers.PoseEstimate poseFromAprilTags;
 
     private List<Rotation2d> errorValues = new ArrayList<>();
 
@@ -68,8 +65,8 @@ public class FieldSpaceOdometry {
         gyroOffset = new Rotation2d(0);
     }
 
-    public void getRotError() {
-        if (aprilTagInfo.tagCount > 0 && gyro.isConnected()) {
+    public void findRotError() {
+        if (poseFromAprilTags.tagCount > 0 && gyro.isConnected()) {
             Rotation2d rotation = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight").pose.getRotation();
             Rotation2d error = rotation.minus(getGyroHeading().minus(gyroOffset));
             errorValues.add(error);
@@ -87,7 +84,7 @@ public class FieldSpaceOdometry {
             System.out.println("ROT CORRECTED");
             System.out.println("Avg error: " + avg);
             correctRot = true;
-            rotCorrected = true;
+            rotJustCorrected = true;
             errorValues.clear();
         }
     }
@@ -100,11 +97,11 @@ public class FieldSpaceOdometry {
         return poseEstimator.getEstimatedPosition();
     }
 
-    public boolean getRotCorrected() {
-        return rotCorrected;
+    public boolean isRotJustCorrected() {
+        return rotJustCorrected;
     }
 
-    public boolean getCorrectRot() {
+    public boolean isCorrectRot() {
         return correctRot;
     }
 
@@ -118,13 +115,13 @@ public class FieldSpaceOdometry {
 
     public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
         if (DriverStation.isEnabled()) {
-            rotCorrected = false;
+            rotJustCorrected = false;
             boolean rejectVision = false;
             boolean megaTag2 = false;
             boolean megaTag1 = false;
 
-            aprilTagInfo = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
             LimelightHelpers.SetRobotOrientation("limelight", getGyroHeading().getDegrees(), 0, 0, 0, 0, 0);
+            poseFromAprilTags = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
 
             if (!gyro.isConnected()) {
                 correctRot = false;
@@ -135,11 +132,11 @@ public class FieldSpaceOdometry {
                 poseEstimator.update(getGyroHeading(), modulePositions);
             }
 
-            if (aprilTagInfo == null) {
+            if (poseFromAprilTags == null) {
                 rejectVision = true;
             }
-            else if (aprilTagInfo.rawFiducials.length == 1) {
-                double ambiguity = aprilTagInfo.rawFiducials[0].ambiguity;
+            else if (poseFromAprilTags.rawFiducials.length == 1) {
+                double ambiguity = poseFromAprilTags.rawFiducials[0].ambiguity;
                 if (ambiguity > 0.9) {
                     rejectVision = true;
                 }
@@ -147,7 +144,7 @@ public class FieldSpaceOdometry {
             else if (Math.abs(gyro.getRate()) > 720) {
                 rejectVision = true;
             }
-            else if (aprilTagInfo.tagCount == 0) {
+            else if (poseFromAprilTags.tagCount == 0) {
                 rejectVision = true;
             }
 
@@ -155,8 +152,8 @@ public class FieldSpaceOdometry {
                 if (megaTag2) {
                     poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
                     poseEstimator.addVisionMeasurement(
-                        aprilTagInfo.pose,
-                        aprilTagInfo.timestampSeconds
+                        poseFromAprilTags.pose,
+                        poseFromAprilTags.timestampSeconds
                     );
                 }
                 else if (megaTag1) {
@@ -172,7 +169,7 @@ public class FieldSpaceOdometry {
             }
 
             if (!correctRot) {
-                getRotError();
+                findRotError();
                 frameCount++;
                 if (frameCount > 25) {
                     correctError();

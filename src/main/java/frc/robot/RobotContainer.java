@@ -11,11 +11,9 @@ import frc.robot.commands.AlignByAprilTagLL;
 import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 
 
 public class RobotContainer {
@@ -25,58 +23,39 @@ public class RobotContainer {
   SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
   SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
-  Joystick leftJoystick = new Joystick(0);
-  Joystick rightJoystick = new Joystick(1);
-  Joystick alJoystick = new Joystick(2);
+  CommandJoystick leftJoystick = new CommandJoystick(0);
+  CommandJoystick rightJoystick = new CommandJoystick(1);
+  CommandJoystick altJoystick = new CommandJoystick(2);
 
   private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 90, 0.7, 0.1, 0.1, 3);
   private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.2, -1.75, 0.3, 0.1, 0.1, 30);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
-
-  private RobotBase robot;
   
-  public RobotContainer(RobotBase robot) {
-    this.robot = robot;
+  public RobotContainer() {
     configureBindings();
   }
 
   private void configureBindings() {
-    JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
-    JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
-    JoystickButton alignByAprilTagLLButton = new JoystickButton(leftJoystick, 3);
-    JoystickButton alignRotButton = new JoystickButton(rightJoystick, 1);
-    JoystickButton alignByCoralStationButton = new JoystickButton(rightJoystick, 2);
-    JoystickButton fixHeadingButton = new JoystickButton(rightJoystick, 3);
-    JoystickButton turtleButton = new JoystickButton(rightJoystick, 4);
-
-
-
     //Positive x moves bot forwards and positive y moves bot to the left
     driveSubsystem.setDefaultCommand(new RunCommand(() -> {
-      if (robot.isTeleopEnabled()){
-        driveSubsystem.drive(
-          -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
-          -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
-          applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND));
-      }
-      else 
-      {
-        driveSubsystem.drive(0,0,0);
-      }
-      
+      driveSubsystem.drive(
+        -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
+        -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
+        applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND));
     }, driveSubsystem));
 
-    turtleButton.whileTrue(new RunCommand(() -> {
+
+    leftJoystick.button(1).whileTrue(driveSubsystem.toggleFieldCentric());
+    leftJoystick.button(2).whileTrue(driveSubsystem.resetFieldCentric());
+    leftJoystick.button(3).whileTrue(alignByAprilTagLL);
+
+    rightJoystick.button(1).whileTrue(alignRot);
+    rightJoystick.button(2).whileTrue(alignByCoralStation);
+    rightJoystick.button(3).whileTrue(driveSubsystem.getRotError());
+    rightJoystick.button(3).onFalse(driveSubsystem.correctError());
+    rightJoystick.button(4).whileTrue(new RunCommand(() -> {
       driveSubsystem.turtle();
     }, driveSubsystem));
-
-    alignByAprilTagLLButton.whileTrue(alignByAprilTagLL);
-    alignRotButton.whileTrue(alignRot);
-    alignByCoralStationButton.whileTrue(alignByCoralStation);
-    fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());
-    resetFieldCentricButton.onTrue(driveSubsystem.resetFieldCentric());
-    fixHeadingButton.whileTrue(driveSubsystem.getRotError());
-    fixHeadingButton.onFalse(driveSubsystem.correctError());
   }
 
   public double applyDeadband(double input, double deadband) {

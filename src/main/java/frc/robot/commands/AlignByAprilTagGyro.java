@@ -32,7 +32,6 @@ public class AlignByAprilTagGyro extends Command {
     SlewRateLimiter limitY;
 
     public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
-
         this.swerveDrive = swerveDrive;
         this.odometry = swerveDrive.getOdometry();
         this.targetX = targetX;
@@ -64,10 +63,6 @@ public class AlignByAprilTagGyro extends Command {
     @Override
     public void execute() {
         if (swerveDrive.getCorrectRot()) {
-            Pose2d robotPose = new Pose2d(
-                new Translation2d(odometry.getPose().getX(), odometry.getPose().getY()),
-                odometry.getPose().getRotation());
-
             Pose2d targetPose;
             targetPose = new Pose2d(new Translation2d(targetX, targetY), Rotation2d.fromDegrees(targetRot));
             
@@ -75,8 +70,8 @@ public class AlignByAprilTagGyro extends Command {
             double y;
             double rot;
 
-            double dx = targetPose.getX() - robotPose.getX();
-            double dy =  targetPose.getY() - robotPose.getY();
+            double dx = targetPose.getX() - odometry.getPose().getX();
+            double dy =  targetPose.getY() - odometry.getPose().getY();
 
             double distance = Math.hypot(dx, dy);
             double angleToTarget = Math.atan2(dy, dx) * 180 / Math.PI;

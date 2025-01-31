@@ -14,6 +14,7 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 
 public class RobotContainer {
@@ -37,20 +38,24 @@ public class RobotContainer {
 
   private void configureBindings() {
     //Positive x moves bot forwards and positive y moves bot to the left
-    driveSubsystem.setDefaultCommand(new RunCommand(() -> {
-      driveSubsystem.drive(
-        -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
-        -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
-        applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND));
-    }, driveSubsystem));
+    // driveSubsystem.setDefaultCommand(new RunCommand(() -> {
+    //   driveSubsystem.drive(
+    //     -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
+    //     -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
+    //     applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND));
+    // }, driveSubsystem));
 
 
-    leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
-    leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
+    // leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
+    leftJoystick.button(1).whileTrue(driveSubsystem.sysIdDynamic(Direction.kForward));
+    leftJoystick.button(2).whileTrue(driveSubsystem.sysIdDynamic(Direction.kReverse));
+    // leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
     leftJoystick.button(3).whileTrue(alignByAprilTagLL);
 
-    rightJoystick.button(1).whileTrue(alignRot);
-    rightJoystick.button(2).whileTrue(alignByCoralStation);
+    // rightJoystick.button(1).whileTrue(alignRot);
+    rightJoystick.button(1).whileTrue(driveSubsystem.sysIdQuasistatic(Direction.kForward));
+    rightJoystick.button(2).whileTrue(driveSubsystem.sysIdQuasistatic(Direction.kReverse));
+    // rightJoystick.button(2).whileTrue(alignByCoralStation);
     rightJoystick.button(3).whileTrue(driveSubsystem.getRotError());
     rightJoystick.button(3).onFalse(driveSubsystem.correctError());
     rightJoystick.button(4).whileTrue(new RunCommand(() -> {

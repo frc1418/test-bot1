@@ -16,6 +16,7 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs;
 
@@ -47,13 +48,20 @@ public class MaxWheelModule extends SubsystemBase {
   
     this.speedEncoder.setPosition(0);
     this.chassisAngularOffset = chassisAngularOffset;
-    
+  }
+
+  public void setVoltage(Voltage voltage) {
+    speedMotor.setVoltage(voltage);
   }
 
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
         speedEncoder.getPosition(),
         new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
+  }
+
+  public SparkMax getMotor() {
+    return speedMotor;
   }
 
   public SwerveModuleState getState() {

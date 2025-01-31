@@ -2,6 +2,11 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 
+
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -11,11 +16,18 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.units.measure.MutDistance;
+import edu.wpi.first.units.measure.MutLinearVelocity;
+import edu.wpi.first.units.measure.MutVoltage;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.common.FieldSpaceOdometry;
@@ -80,8 +92,60 @@ public class DriveSubsystem extends SubsystemBase {
 
     private boolean fieldCentric = true;
 
+    SysIdRoutine routine;
+
+    // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
+    private final MutVoltage m_appliedVoltage = Volts.mutable(0);
+    // Mutable holder for unit-safe linear distance values, persisted to avoid reallocation.
+    private final MutDistance m_distance = Meters.mutable(0);
+    // Mutable holder for unit-safe linear velocity values, persisted to avoid reallocation.
+    private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
+
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
+        routine = new SysIdRoutine(
+            new SysIdRoutine.Config(), 
+            new SysIdRoutine.Mechanism(voltage -> {
+                backLeftWheel.setVoltage(voltage);
+                backRightWheel.setVoltage(voltage);
+                frontLeftWheel.setVoltage(voltage);
+                frontRightWheel.setVoltage(voltage);
+            }, 
+            log -> {
+                log.motor("backLeft")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            backLeftWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(backLeftWheel.getMotor().getEncoder().getPosition(), Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(backLeftWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
+                // Record a frame for the right motors.  Since these share an encoder, we consider
+                // the entire group to be one motor.
+                log.motor("backRight")
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            backRightWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                    .linearPosition(m_distance.mut_replace(backRightWheel.getMotor().getEncoder().getPosition(), Meters))
+                    .linearVelocity(
+                        m_velocity.mut_replace(backRightWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
+
+                log.motor("frontLeft")
+                .voltage(
+                    m_appliedVoltage.mut_replace(
+                        frontLeftWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                .linearPosition(m_distance.mut_replace(frontLeftWheel.getMotor().getEncoder().getPosition(), Meters))
+                .linearVelocity(
+                    m_velocity.mut_replace(frontLeftWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
+                    
+                log.motor("frontRight")
+                .voltage(
+                    m_appliedVoltage.mut_replace(
+                        frontRightWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                .linearPosition(m_distance.mut_replace(frontRightWheel.getMotor().getEncoder().getPosition(), Meters))
+                .linearVelocity(
+                    m_velocity.mut_replace(frontRightWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
+            }, 
+            this));
         fieldOdometry = new FieldSpaceOdometry(getModulePositions(), ally);
         targetOdometry = new TargetSpaceOdometry(getModulePositions(), fieldOdometry);
         resetLockRot();
@@ -212,6 +276,14 @@ public class DriveSubsystem extends SubsystemBase {
             fieldOdometry.setCorrectRot(true);
         });
     }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return routine.quasistatic(direction);
+      }
+    
+      public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return routine.dynamic(direction);
+      }
 
     @Override
     public void periodic() {

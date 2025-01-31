@@ -78,7 +78,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     private Optional<Alliance> ally;
 
-    private boolean fieldCentric = false;
+    private boolean fieldCentric = true;
 
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
@@ -104,6 +104,10 @@ public class DriveSubsystem extends SubsystemBase {
         if (fieldOdometry.isRotJustCorrected()) {
             resetLockRot();
         }
+        
+        if (!ally.isPresent()) {
+            ally = DriverStation.getAlliance();
+        }
 
         if(rotSpeed == 0 && fieldOdometry.isCorrectRot() && Math.abs(fieldOdometry.getGyroHeading().getDegrees() - lockedRot) < 180) {
             if (Math.hypot(x, y) > 0.25) {
@@ -123,13 +127,11 @@ public class DriveSubsystem extends SubsystemBase {
 
 
         if (fieldCentric && fieldOdometry.isCorrectRot()) {
-            if (ally.isPresent()) {
-                if (ally.get() == Alliance.Red) {
-                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, new Rotation2d(fieldOdometry.getGyroHeading().getRadians()+Math.PI));
-                }
-                else {
-                    speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, fieldOdometry.getGyroHeading());
-                }
+            if (ally.get() == Alliance.Red) {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, new Rotation2d(fieldOdometry.getGyroHeading().getRadians()+Math.PI));
+            }
+            else {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, fieldOdometry.getGyroHeading());
             }
         }
         else {

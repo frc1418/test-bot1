@@ -26,9 +26,11 @@ public class TargetSpaceOdometry {
             double[] botPos_targetSpace = LimelightHelpers.getBotPose_TargetSpace("limelight");
             double[] camPos_targetSpace = LimelightHelpers.getCameraPose_TargetSpace("limelight");
 
-            reset(
-                new Pose2d(new Translation2d(botPos_targetSpace[0], botPos_targetSpace[2]), new Rotation2d(camPos_targetSpace[4]*Math.PI/180))
-            );
+            if (botPos_targetSpace.length > 0 && camPos_targetSpace.length > 0) {
+                reset(
+                    new Pose2d(new Translation2d(botPos_targetSpace[0], botPos_targetSpace[2]), new Rotation2d(camPos_targetSpace[4]*Math.PI/180))
+                );
+            }
         }
         else {
             Rotation2d deltaGyro = fieldSpaceOdometry.getGyroHeading().minus(oldGyro);

@@ -27,8 +27,8 @@ public class RobotContainer {
   CommandJoystick rightJoystick = new CommandJoystick(1);
   CommandJoystick altJoystick = new CommandJoystick(2);
 
-  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 90, 0.7, 0.1, 0.1, 3);
-  private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.2, -1.75, 0.3, 0.1, 0.1, 30);
+  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
   public RobotContainer() {
@@ -45,8 +45,8 @@ public class RobotContainer {
     }, driveSubsystem));
 
 
-    leftJoystick.button(1).whileTrue(driveSubsystem.toggleFieldCentric());
-    leftJoystick.button(2).whileTrue(driveSubsystem.resetFieldCentric());
+    leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
+    leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
     leftJoystick.button(3).whileTrue(alignByAprilTagLL);
 
     rightJoystick.button(1).whileTrue(alignRot);

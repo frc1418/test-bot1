@@ -107,7 +107,7 @@ public class DriveSubsystem extends SubsystemBase {
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
         routine = new SysIdRoutine(
-            new SysIdRoutine.Config(null, Volts.of(4), null), 
+            new SysIdRoutine.Config(), 
             new SysIdRoutine.Mechanism(voltage -> {
                 backLeftWheel.setVoltage(voltage);
                 backRightWheel.setVoltage(voltage);

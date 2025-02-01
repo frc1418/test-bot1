@@ -6,6 +6,8 @@ import java.util.Optional;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.Seconds;
+
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,6 +21,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.MutDistance;
 import edu.wpi.first.units.measure.MutLinearVelocity;
 import edu.wpi.first.units.measure.MutVoltage;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -104,7 +107,7 @@ public class DriveSubsystem extends SubsystemBase {
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
         routine = new SysIdRoutine(
-            new SysIdRoutine.Config(), 
+            new SysIdRoutine.Config(null, Volts.of(4), null), 
             new SysIdRoutine.Mechanism(voltage -> {
                 backLeftWheel.setVoltage(voltage);
                 backRightWheel.setVoltage(voltage);
@@ -115,7 +118,7 @@ public class DriveSubsystem extends SubsystemBase {
                 log.motor("backLeft")
                     .voltage(
                         m_appliedVoltage.mut_replace(
-                            backLeftWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                            backLeftWheel.getMotor().getAppliedOutput() * RobotController.getBatteryVoltage(), Volts))
                     .linearPosition(m_distance.mut_replace(backLeftWheel.getMotor().getEncoder().getPosition(), Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(backLeftWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
@@ -124,7 +127,7 @@ public class DriveSubsystem extends SubsystemBase {
                 log.motor("backRight")
                     .voltage(
                         m_appliedVoltage.mut_replace(
-                            backRightWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                            backRightWheel.getMotor().getAppliedOutput() * RobotController.getBatteryVoltage(), Volts))
                     .linearPosition(m_distance.mut_replace(backRightWheel.getMotor().getEncoder().getPosition(), Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(backRightWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
@@ -132,7 +135,7 @@ public class DriveSubsystem extends SubsystemBase {
                 log.motor("frontLeft")
                 .voltage(
                     m_appliedVoltage.mut_replace(
-                        frontLeftWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                        frontLeftWheel.getMotor().getAppliedOutput() * RobotController.getBatteryVoltage(), Volts))
                 .linearPosition(m_distance.mut_replace(frontLeftWheel.getMotor().getEncoder().getPosition(), Meters))
                 .linearVelocity(
                     m_velocity.mut_replace(frontLeftWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));
@@ -140,7 +143,7 @@ public class DriveSubsystem extends SubsystemBase {
                 log.motor("frontRight")
                 .voltage(
                     m_appliedVoltage.mut_replace(
-                        frontRightWheel.getMotor().get() * RobotController.getBatteryVoltage(), Volts))
+                        frontRightWheel.getMotor().getAppliedOutput() * RobotController.getBatteryVoltage(), Volts))
                 .linearPosition(m_distance.mut_replace(frontRightWheel.getMotor().getEncoder().getPosition(), Meters))
                 .linearVelocity(
                     m_velocity.mut_replace(frontRightWheel.getMotor().getEncoder().getVelocity(), MetersPerSecond));

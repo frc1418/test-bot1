@@ -26,25 +26,45 @@ public class DriveSubsystem extends SubsystemBase {
     private final MaxWheelModule frontLeftWheel = new MaxWheelModule(
         DrivetrainConstants.FRONT_LEFT_SPEED_ID,
         DrivetrainConstants.FRONT_LEFT_ANGLE_ID,
-        DrivetrainConstants.FRONT_LEFT_ENCODER_OFFSET
+        DrivetrainConstants.FRONT_LEFT_ENCODER_OFFSET,
+        DrivetrainConstants.FRONT_LEFT_P,
+        DrivetrainConstants.FRONT_LEFT_D,
+        DrivetrainConstants.FRONT_LEFT_KS,
+        DrivetrainConstants.FRONT_LEFT_KV,
+        DrivetrainConstants.FRONT_LEFT_KA
     );
       
     private final MaxWheelModule frontRightWheel = new MaxWheelModule(
         DrivetrainConstants.FRONT_RIGHT_SPEED_ID,
         DrivetrainConstants.FRONT_RIGHT_ANGLE_ID,
-        DrivetrainConstants.FRONT_RIGHT_ENCODER_OFFSET
+        DrivetrainConstants.FRONT_RIGHT_ENCODER_OFFSET,
+        DrivetrainConstants.FRONT_RIGHT_P,
+        DrivetrainConstants.FRONT_RIGHT_D,
+        DrivetrainConstants.FRONT_RIGHT_KS,
+        DrivetrainConstants.FRONT_RIGHT_KV,
+        DrivetrainConstants.FRONT_RIGHT_KA
     );
 
     private final MaxWheelModule backLeftWheel = new MaxWheelModule(
         DrivetrainConstants.BACK_LEFT_SPEED_ID,
         DrivetrainConstants.BACK_LEFT_ANGLE_ID,
-        DrivetrainConstants.BACK_LEFT_ENCODER_OFFSET
+        DrivetrainConstants.BACK_LEFT_ENCODER_OFFSET,
+        DrivetrainConstants.BACK_LEFT_P,
+        DrivetrainConstants.BACK_LEFT_D,
+        DrivetrainConstants.BACK_LEFT_KS,
+        DrivetrainConstants.BACK_LEFT_KV,
+        DrivetrainConstants.BACK_LEFT_KA
     );
 
     private final MaxWheelModule backRightWheel = new MaxWheelModule(
         DrivetrainConstants.BACK_RIGHT_SPEED_ID,
         DrivetrainConstants.BACK_RIGHT_ANGLE_ID,
-        DrivetrainConstants.BACK_RIGHT_ENCODER_OFFSET
+        DrivetrainConstants.BACK_RIGHT_ENCODER_OFFSET,
+        DrivetrainConstants.BACK_RIGHT_P,
+        DrivetrainConstants.BACK_RIGHT_D,
+        DrivetrainConstants.BACK_RIGHT_KS,
+        DrivetrainConstants.BACK_RIGHT_KV,
+        DrivetrainConstants.BACK_RIGHT_KA
     );
 
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();

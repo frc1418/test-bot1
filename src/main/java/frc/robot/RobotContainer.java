@@ -29,7 +29,7 @@ public class RobotContainer {
 
   private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
   private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
-  private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, rightJoystick, 0);
+  private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
   public RobotContainer() {
     configureBindings();

@@ -26,21 +26,19 @@ public class AlignRot extends Command {
     CommandJoystick rightJoystick;
 
     double targetRot;
-    double previousRot;
 
     Optional<Alliance> ally;
 
     SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
     SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
-    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, CommandJoystick rightJoystick, double targetRot) {
+    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, double targetRot) {
 
         ally = DriverStation.getAlliance();
         this.robotContainer = robotContainer;
         this.swerveDrive = swerveDrive;
         this.odometry = swerveDrive.getOdometry();
         this.leftJoystick = leftJoystick;
-        this.rightJoystick = rightJoystick;
         this.targetRot = targetRot;
         if (ally.isPresent()) {
             if (ally.get() == Alliance.Red) {
@@ -58,7 +56,6 @@ public class AlignRot extends Command {
     @Override
     public void initialize() {
         swerveDrive.drive(limitX.calculate(0),limitY.calculate(0),0);
-        previousRot = -rightJoystick.getX();
     }
 
     // Called every time the scheduler runs while the command is scheduled.
@@ -73,10 +70,6 @@ public class AlignRot extends Command {
 
         if (swerveDrive.getCorrectRot()) {
             double rot = speedRotController.calculate(odometry.getPose().getRotation().getDegrees(), targetRot);
-            if (Math.abs(rot - previousRot) > 0.075 && Math.abs(rot) > Math.abs(previousRot)) {
-                rot = previousRot+0.075*Math.signum(rot);
-            }
-            previousRot = rot;
 
             swerveDrive.drive(
                 -limitX.calculate(robotContainer.applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),

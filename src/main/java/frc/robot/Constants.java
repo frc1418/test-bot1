@@ -68,6 +68,7 @@ public final class Constants {
     public final static double maxAccel = 5.0;
     public final static double maxSpeedMetersPerSecond = 4.8;
     public final static double maxAngularSpeed = 2*Math.PI;
+    public final static double maxAngularAccel = 0.075;
     public final static double maxCorrectiveAngularSpeed = Math.PI;
     public final static double correctiveFactor = 0.16;
     public final static double baseCorrector = 0.04;

@@ -95,6 +95,7 @@ public class DriveSubsystem extends SubsystemBase {
     private PIDController rotationController = new PIDController(DriverConstants.baseCorrector, 0, 0); 
 
     private double lockedRot;
+    private double previousRot = 0;
 
     private Optional<Alliance> ally;
 
@@ -117,6 +118,11 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
+        if (Math.abs(rot - previousRot) > DriverConstants.maxAngularAccel && Math.abs(rot) > Math.abs(previousRot)) {
+            rot = previousRot+DriverConstants.maxAngularAccel*Math.signum(rot);
+        }
+        previousRot = rot;
+
         double xSpeed = x*DriverConstants.maxSpeedMetersPerSecond;
         double ySpeed = y*DriverConstants.maxSpeedMetersPerSecond;
         double rotSpeed = rot*DriverConstants.maxAngularSpeed;

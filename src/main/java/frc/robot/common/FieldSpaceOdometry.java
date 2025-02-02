@@ -32,7 +32,6 @@ public class FieldSpaceOdometry {
     private Pose2d pose;
 
     private boolean correctRot = true;
-
     private boolean rotJustCorrected = false;
 
     private int frameCount = 0;
@@ -43,9 +42,12 @@ public class FieldSpaceOdometry {
 
     private List<Rotation2d> errorValues = new ArrayList<>();
 
+    private SwerveModulePosition[] modulePositions;
+
     private final SwerveDrivePoseEstimator poseEstimator;
 
     public FieldSpaceOdometry(SwerveModulePosition[] modulePositions, Optional<Alliance> ally) {    
+        this.modulePositions = modulePositions;
         this.gyro = new AHRS(AHRS.NavXComType.kUSB1);
         zeroHeading();
         this.pose = new Pose2d();
@@ -114,6 +116,7 @@ public class FieldSpaceOdometry {
     }
 
     public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
+        this.modulePositions = modulePositions;
         if (DriverStation.isEnabled()) {
             rotJustCorrected = false;
             boolean rejectVision = false;
@@ -183,7 +186,7 @@ public class FieldSpaceOdometry {
         ntCorrectRot.setBoolean(correctRot);
     }
 
-    public void resetOdometry(Pose2d pose, SwerveModulePosition[] modulePositions) {
-        poseEstimator.resetPosition(getGyroHeading(), modulePositions, pose);
+    public void resetPose(Pose2d newPose) {
+        poseEstimator.resetPosition(getGyroHeading(), modulePositions, newPose);
     }
 }

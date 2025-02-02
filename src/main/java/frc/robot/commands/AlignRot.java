@@ -23,21 +23,24 @@ public class AlignRot extends Command {
     FieldSpaceOdometry odometry;
 
     CommandJoystick leftJoystick;
+    CommandJoystick rightJoystick;
 
     double targetRot;
+    double previousRot;
 
     Optional<Alliance> ally;
 
     SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
     SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
-    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, double targetRot) {
+    public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, CommandJoystick rightJoystick, double targetRot) {
 
         ally = DriverStation.getAlliance();
         this.robotContainer = robotContainer;
         this.swerveDrive = swerveDrive;
         this.odometry = swerveDrive.getOdometry();
         this.leftJoystick = leftJoystick;
+        this.rightJoystick = rightJoystick;
         this.targetRot = targetRot;
         if (ally.isPresent()) {
             if (ally.get() == Alliance.Red) {
@@ -45,7 +48,7 @@ public class AlignRot extends Command {
             }
         }
 
-        speedRotController = new PIDController(0.005, 0.0004, 0);
+        speedRotController = new PIDController(0.015, 0, 0.0005);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);
@@ -55,13 +58,25 @@ public class AlignRot extends Command {
     @Override
     public void initialize() {
         swerveDrive.drive(limitX.calculate(0),limitY.calculate(0),0);
+        previousRot = -rightJoystick.getX();
     }
 
     // Called every time the scheduler runs while the command is scheduled.
     @Override
     public void execute() {
+        if (!ally.isPresent()) {
+            ally = DriverStation.getAlliance();
+            if (ally.get() == Alliance.Red) {
+                this.targetRot += 180;
+            }
+        }
+
         if (swerveDrive.getCorrectRot()) {
             double rot = speedRotController.calculate(odometry.getPose().getRotation().getDegrees(), targetRot);
+            if (Math.abs(rot - previousRot) > 0.075 && Math.abs(rot) > Math.abs(previousRot)) {
+                rot = previousRot+0.075*Math.signum(rot);
+            }
+            previousRot = rot;
 
             swerveDrive.drive(
                 -limitX.calculate(robotContainer.applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),

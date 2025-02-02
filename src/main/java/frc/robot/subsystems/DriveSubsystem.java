@@ -2,7 +2,13 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -101,11 +107,43 @@ public class DriveSubsystem extends SubsystemBase {
 
     private boolean fieldCentric = true;
 
+    RobotConfig config;
+
     public DriveSubsystem() {
         ally = DriverStation.getAlliance();
         fieldOdometry = new FieldSpaceOdometry(getModulePositions(), ally);
         targetOdometry = new TargetSpaceOdometry(getModulePositions(), fieldOdometry);
         resetLockRot();
+
+        try{
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            System.out.println("Error loading config");
+            e.printStackTrace();
+        }
+
+        AutoBuilder.configure(
+            fieldOdometry::getPose, // Robot pose supplier
+            fieldOdometry::resetPose, // Method to reset odometry (will be called if your auto has a starting pose)
+            this::getCurrentSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+            (speeds, feedforwards) -> chassisSpeedsDrive(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
+            new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
+                    new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
+            ),
+            config, // The robot configuration
+            () -> {
+              // Boolean supplier that controls when the path will be mirrored for the red alliance
+              // This will flip the path being followed to the red side of the field.
+              // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+              if (ally.isPresent()) {
+                return ally.get() == DriverStation.Alliance.Red;
+              }
+              return false;
+            },
+            this // Reference to this subsystem to set requirements
+        );
     }
 
     public SwerveModulePosition[] getModulePositions() {
@@ -151,7 +189,6 @@ public class DriveSubsystem extends SubsystemBase {
             resetLockRot();
         }
 
-
         if (fieldCentric && fieldOdometry.isCorrectRot()) {
             if (ally.get() == Alliance.Red) {
                 speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, new Rotation2d(fieldOdometry.getGyroHeading().getRadians()+Math.PI));
@@ -164,14 +201,18 @@ public class DriveSubsystem extends SubsystemBase {
             speeds = new ChassisSpeeds(xSpeed, ySpeed, rotSpeed);
         }
 
+        chassisSpeedsDrive(speeds);
+    }
+
+    public void chassisSpeedsDrive(ChassisSpeeds speeds) {
         speeds = ChassisSpeeds.discretize(speeds, 0.02);
         
         SwerveModuleState[] wheelStates = DrivetrainConstants.SWERVE_KINEMATICS.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(wheelStates, DriverConstants.maxSpeedMetersPerSecond);
-        drive(wheelStates);
+        moduleStatesDrive(wheelStates);
     }
 
-    public void drive(SwerveModuleState[] wheelStates) {
+    public void moduleStatesDrive(SwerveModuleState[] wheelStates) {
         frontLeftWheel.setDesiredState(wheelStates[0]);
         frontRightWheel.setDesiredState(wheelStates[1]);
         backLeftWheel.setDesiredState(wheelStates[2]);
@@ -209,8 +250,19 @@ public class DriveSubsystem extends SubsystemBase {
         return fieldOdometry.isCorrectRot();
     }
 
+    public ChassisSpeeds getCurrentSpeeds() {
+        return speeds;
+    }
+
     public void resetLockRot() {
         lockedRot = fieldOdometry.getGyroHeading().getDegrees();
+    }
+
+    public Command resetPose() {
+        return Commands.runOnce(() -> {
+            fieldOdometry.resetPose(new Pose2d(5, 5, new Rotation2d(0, 1)));
+            resetLockRot();
+        });
     }
 
     public Command getRotError() {

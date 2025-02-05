@@ -10,14 +10,25 @@ import frc.robot.commands.AlignByAprilTagGyro;
 import frc.robot.commands.AlignByAprilTagLL;
 import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.events.EventTrigger;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 
 
 public class RobotContainer {
   
+  private final SendableChooser<Command> autoChooser;
+
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
 
   SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
@@ -27,12 +38,17 @@ public class RobotContainer {
   CommandJoystick rightJoystick = new CommandJoystick(1);
   CommandJoystick altJoystick = new CommandJoystick(2);
 
-  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByAprilTagGyro alignByCoralStation = new (driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
   private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
   public RobotContainer() {
     configureBindings();
+
+    // Build an auto chooser. This will use Commands.none() as the default option.
+     autoChooser = AutoBuilder.buildAutoChooser("Test");
+     autoChooser.setDefaultOption("Default Path", null);
+     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
   private void configureBindings() {
@@ -66,6 +82,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return null;
+    return autoChooser.getSelected();
   }
 }

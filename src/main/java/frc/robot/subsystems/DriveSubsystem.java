@@ -258,6 +258,12 @@ public class DriveSubsystem extends SubsystemBase {
         lockedRot = fieldOdometry.getGyroHeading().getDegrees();
     }
 
+    public Command resetPose(Pose2d pose) {
+        return Commands.runOnce(() -> {
+            fieldOdometry.resetPose(pose);
+        });
+    }
+
     public Command getRotError() {
         return Commands.runOnce(() -> {
             fieldOdometry.findRotError();

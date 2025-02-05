@@ -173,7 +173,7 @@ public class DriveSubsystem extends SubsystemBase {
             ally = DriverStation.getAlliance();
         }
 
-        if(rotSpeed == 0 && fieldOdometry.isCorrectRot() && Math.abs(fieldOdometry.getGyroHeading().getDegrees() - lockedRot) < 180) {
+        if(rotSpeed == 0 && fieldOdometry.isCorrectRot() && Math.abs(fieldOdometry.getGyroHeading().getDegrees() - lockedRot) < 180 && DriverStation.isTeleopEnabled()) {
             if (Math.hypot(x, y) > 0.25) {
                 rotationController.setP(Math.hypot(x,y)*DriverConstants.correctiveFactor);
             }

@@ -84,7 +84,6 @@ public class MaxWheelModule extends SubsystemBase {
   }
 
   public void setWheelSpeed(double speed) {
-    System.out.println(speed);
     if (Math.abs(speed) < .1)
       speed = 0;
     speedController.setReference(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0, speedFeedforward.calculate(speed));

@@ -6,7 +6,7 @@ package frc.robot;
 
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import frc.robot.commands.AlignByAprilTagGyro;
+import frc.robot.commands.AlignByFieldPose;
 import frc.robot.commands.AlignByAprilTagLL;
 import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
@@ -38,7 +38,8 @@ public class RobotContainer {
   CommandJoystick rightJoystick = new CommandJoystick(1);
   CommandJoystick altJoystick = new CommandJoystick(2);
 
-  private final AlignByAprilTagGyro alignByCoralStation = new (driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByFieldPose alignByCoralStation = new AlignByFieldPose(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByFieldPose alignByAutoStart = new AlignByFieldPose(driveSubsystem, 17, 5, 0, 0.7, 0.1, 0.1, 3);
   private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
@@ -64,6 +65,7 @@ public class RobotContainer {
     leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
     leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
     leftJoystick.button(3).whileTrue(alignByAprilTagLL);
+    leftJoystick.button(4).whileTrue(alignByAutoStart);
 
     rightJoystick.button(1).whileTrue(alignRot);
     rightJoystick.button(2).whileTrue(alignByCoralStation);

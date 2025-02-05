@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.common.FieldSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
 
-public class AlignByAprilTagGyro extends Command {
+public class AlignByFieldPose extends Command {
 
     PIDController speedXController;
     PIDController speedYController;
@@ -31,7 +31,7 @@ public class AlignByAprilTagGyro extends Command {
     SlewRateLimiter limitX;
     SlewRateLimiter limitY;
 
-    public AlignByAprilTagGyro(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
+    public AlignByFieldPose(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
         this.swerveDrive = swerveDrive;
         this.odometry = swerveDrive.getOdometry();
         this.targetX = targetX;

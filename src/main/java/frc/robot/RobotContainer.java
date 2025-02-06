@@ -6,72 +6,56 @@ package frc.robot;
 
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.AlignByAprilTagGyro;
+import frc.robot.commands.AlignByAprilTagLL;
+import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.ExampleSubsystem;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 
 
 public class RobotContainer {
   
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
 
-  SlewRateLimiter limitX = new SlewRateLimiter(6);
-  SlewRateLimiter limitY = new SlewRateLimiter(6);
+  SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
+  SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
-  private RobotBase robot;
+  CommandJoystick leftJoystick = new CommandJoystick(0);
+  CommandJoystick rightJoystick = new CommandJoystick(1);
+  CommandJoystick altJoystick = new CommandJoystick(2);
+
+  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
+  private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
-  public RobotContainer(RobotBase robot) {
-    this.robot = robot;
+  public RobotContainer() {
     configureBindings();
   }
 
-
   private void configureBindings() {
-    Joystick leftJoystick = new Joystick(0);
-    Joystick rightJoystick = new Joystick(1);
-    Joystick alJoystick = new Joystick(2);
-
-    JoystickButton fieldCentricButton = new JoystickButton(leftJoystick, 1);
-    JoystickButton resetFieldCentricButton = new JoystickButton(leftJoystick, 2);
-    JoystickButton turtleButton = new JoystickButton(rightJoystick, 1);
-
+    //Positive x moves bot forwards and positive y moves bot to the left
     driveSubsystem.setDefaultCommand(new RunCommand(() -> {
-      if (robot.isTeleopEnabled()){
-        if (driveSubsystem.getFieldCentric()) {
-          driveSubsystem.drive(
-            -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
-            -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
-            applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND)*DriverConstants.angleMultiplier);
-        }
-        else {
-          driveSubsystem.drive(
-            -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
-            -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND))*DriverConstants.speedMultiplier,
-            applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND)*DriverConstants.angleMultiplier);
-        }
-      }
-      else 
-      {
-        driveSubsystem.drive(0,0,0);
-      }
-      
+      driveSubsystem.drive(
+        -limitX.calculate(applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
+        -limitY.calculate(applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
+        applyDeadband(-rightJoystick.getX(), DrivetrainConstants.ROTATION_DEADBAND));
     }, driveSubsystem));
 
-    turtleButton.whileTrue(new RunCommand(() -> {
+
+    leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
+    leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
+    leftJoystick.button(3).whileTrue(alignByAprilTagLL);
+
+    rightJoystick.button(1).whileTrue(alignRot);
+    rightJoystick.button(2).whileTrue(alignByCoralStation);
+    rightJoystick.button(3).whileTrue(driveSubsystem.getRotError());
+    rightJoystick.button(3).onFalse(driveSubsystem.correctError());
+    rightJoystick.button(4).whileTrue(new RunCommand(() -> {
       driveSubsystem.turtle();
     }, driveSubsystem));
-
-    fieldCentricButton.onTrue(driveSubsystem.toggleFieldCentric());
-    resetFieldCentricButton.onTrue(driveSubsystem.resetFieldCentric());
   }
 
   public double applyDeadband(double input, double deadband) {

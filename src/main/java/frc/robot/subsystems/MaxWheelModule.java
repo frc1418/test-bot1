@@ -63,14 +63,11 @@ public class MaxWheelModule extends SubsystemBase {
   }
 
   public void setDesiredState(SwerveModuleState desiredState) {
-    SwerveModuleState correctedDesiredState = new SwerveModuleState();
-    correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
-    //MAXSwerve-Java-Template said plus, but incoroporates minus for the getter methods
-    correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
-    correctedDesiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
+    desiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(chassisAngularOffset));
+    desiredState.optimize(new Rotation2d(this.angleEncoder.getPosition()));
 
-    setWheelSpeed(correctedDesiredState.speedMetersPerSecond);
-    setWheelAngle(correctedDesiredState.angle.getRadians());
+    setWheelSpeed(desiredState.speedMetersPerSecond);
+    setWheelAngle(desiredState.angle.getRadians());
   }
 
   public void setWheelSpeed(double speed) {

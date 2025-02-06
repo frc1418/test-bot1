@@ -1,21 +1,25 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-
-import frc.robot.common.Odometry;
+import frc.robot.common.FieldSpaceOdometry;
+import frc.robot.common.TargetSpaceOdometry;
 
 public class DriveSubsystem extends SubsystemBase {
     
@@ -59,22 +63,27 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
     private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
+    private final NetworkTableEntry ntEstimatedRot = table.getEntry("estimatedRot");
 
-    private final Odometry odometry;
+    private final FieldSpaceOdometry fieldOdometry;
+
+    private final TargetSpaceOdometry targetOdometry;
 
     private ChassisSpeeds speeds = new ChassisSpeeds(0, 0, 0);
 
     //This PID controller is used to keep the robot facing the same direction when not rotating
-    private PIDController rotationController = new PIDController(0.04, 0, 0); 
+    private PIDController rotationController = new PIDController(DriverConstants.baseCorrector, 0, 0); 
 
-    private double lockedRot = 0;
+    private double lockedRot;
 
-    //Whatever is set here is the initial field centric parameter value
-    private boolean fieldCentric = false;
+    private Optional<Alliance> ally;
+
+    private boolean fieldCentric = true;
 
     public DriveSubsystem() {
-        odometry = new Odometry(getModulePositions());
-        odometry.zeroHeading();
+        ally = DriverStation.getAlliance();
+        fieldOdometry = new FieldSpaceOdometry(getModulePositions(), ally);
+        targetOdometry = new TargetSpaceOdometry(getModulePositions(), fieldOdometry);
         resetLockRot();
     }
 
@@ -88,26 +97,51 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
-        if(rot == 0) {
-            rot = rotationController.calculate(odometry.getHeading().getDegrees(), lockedRot);
+        double xSpeed = x*DriverConstants.maxSpeedMetersPerSecond;
+        double ySpeed = y*DriverConstants.maxSpeedMetersPerSecond;
+        double rotSpeed = rot*DriverConstants.maxAngularSpeed;
+
+        if (fieldOdometry.isRotJustCorrected()) {
+            resetLockRot();
+        }
+        
+        if (!ally.isPresent()) {
+            ally = DriverStation.getAlliance();
+        }
+
+        if(rotSpeed == 0 && fieldOdometry.isCorrectRot() && Math.abs(fieldOdometry.getGyroHeading().getDegrees() - lockedRot) < 180) {
+            if (Math.hypot(x, y) > 0.25) {
+                rotationController.setP(Math.hypot(x,y)*DriverConstants.correctiveFactor);
+            }
+            else {
+                rotationController.setP(DriverConstants.baseCorrector);
+            }
+            rotSpeed = rotationController.calculate(fieldOdometry.getGyroHeading().getDegrees(), lockedRot);
+            if (Math.abs(rotSpeed) > DriverConstants.maxCorrectiveAngularSpeed) {
+                rotSpeed = DriverConstants.maxCorrectiveAngularSpeed*Math.signum(rotSpeed);
+            }
         }
         else {
-            lockedRot = odometry.getHeading().getDegrees();
+            resetLockRot();
         }
 
 
-        if (Math.abs(rot) > DriverConstants.ROTATION_SPEED_CAP) {
-            rot = DriverConstants.ROTATION_SPEED_CAP*Math.signum(rot);
-        }
-
-        if (fieldCentric) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x, y, rot, odometry.getHeading());
+        if (fieldCentric && fieldOdometry.isCorrectRot()) {
+            if (ally.get() == Alliance.Red) {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, new Rotation2d(fieldOdometry.getGyroHeading().getRadians()+Math.PI));
+            }
+            else {
+                speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, fieldOdometry.getGyroHeading());
+            }
         }
         else {
-            speeds = new ChassisSpeeds(x, y, rot);
+            speeds = new ChassisSpeeds(xSpeed, ySpeed, rotSpeed);
         }
 
+        speeds = ChassisSpeeds.discretize(speeds, 0.02);
+        
         SwerveModuleState[] wheelStates = DrivetrainConstants.SWERVE_KINEMATICS.toSwerveModuleStates(speeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(wheelStates, DriverConstants.maxSpeedMetersPerSecond);
         drive(wheelStates);
     }
 
@@ -125,12 +159,44 @@ public class DriveSubsystem extends SubsystemBase {
         backRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
     }
 
+    public void setFieldCentric(boolean fieldCentric) {
+        this.fieldCentric = fieldCentric;
+    }
+
     public boolean getFieldCentric() {
         return fieldCentric;
     }
 
+    public FieldSpaceOdometry getOdometry() {
+        return fieldOdometry;
+    }
+
+    public TargetSpaceOdometry getTargetOdometry() {
+        return targetOdometry;
+    }
+
+    public double getLockedRot() {
+        return lockedRot;
+    }
+
+    public boolean getCorrectRot() {
+        return fieldOdometry.isCorrectRot();
+    }
+
     public void resetLockRot() {
-        lockedRot = odometry.getHeading().getDegrees();
+        lockedRot = fieldOdometry.getGyroHeading().getDegrees();
+    }
+
+    public Command getRotError() {
+        return Commands.runOnce(() -> {
+            fieldOdometry.findRotError();
+        });
+    }
+
+    public Command correctError() {
+        return Commands.runOnce(() -> {
+            fieldOdometry.correctError();
+        });
     }
 
     public Command toggleFieldCentric() {
@@ -141,14 +207,16 @@ public class DriveSubsystem extends SubsystemBase {
 
     public Command resetFieldCentric() {
         return Commands.runOnce(() -> {
-            odometry.zeroHeading();
+            fieldOdometry.zeroHeading();
             resetLockRot();
+            fieldOdometry.setCorrectRot(true);
         });
     }
 
     @Override
     public void periodic() {
-        odometry.update(getModulePositions());
+        fieldOdometry.update(getModulePositions(), lockedRot);
+        targetOdometry.update(getModulePositions());
 
         ntBackLeftAngleEncoder.setDouble(backLeftWheel.getPosition().angle.getRadians());
         ntBackRightAngleEncoder.setDouble(backRightWheel.getPosition().angle.getRadians());
@@ -162,8 +230,9 @@ public class DriveSubsystem extends SubsystemBase {
 
         ntIsFieldCentric.setBoolean(fieldCentric);
 
-        ntHeading.setDouble(odometry.getHeading().getDegrees());
+        ntHeading.setDouble(fieldOdometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(lockedRot);
+        ntEstimatedRot.setDouble(fieldOdometry.getEstimatedRot().getDegrees());
     }
 
     @Override

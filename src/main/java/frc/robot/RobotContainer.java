@@ -83,6 +83,10 @@ public class RobotContainer {
       input;
   }
 
+  public void resetLockRot() {
+    driveSubsystem.resetLockRot();
+  }
+
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
   }

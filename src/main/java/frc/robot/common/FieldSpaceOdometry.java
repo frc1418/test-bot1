@@ -46,7 +46,7 @@ public class FieldSpaceOdometry {
 
     private final SwerveDrivePoseEstimator poseEstimator;
 
-    public FieldSpaceOdometry(SwerveModulePosition[] modulePositions, Optional<Alliance> ally) {    
+    public FieldSpaceOdometry(SwerveModulePosition[] modulePositions) {    
         this.modulePositions = modulePositions;
         this.gyro = new AHRS(AHRS.NavXComType.kUSB1);
         zeroHeading();
@@ -55,11 +55,6 @@ public class FieldSpaceOdometry {
             DrivetrainConstants.SWERVE_KINEMATICS, new Rotation2d(0), modulePositions, pose,
             VecBuilder.fill(0.05, 0.05, 0),
             VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
-        if (ally.isPresent()) {
-            if (ally.get() == Alliance.Blue) {
-                gyroOffset = Rotation2d.fromDegrees(180);
-            }
-        }
     }
 
     public void zeroHeading() {
@@ -189,6 +184,7 @@ public class FieldSpaceOdometry {
     }
 
     public void resetPose(Pose2d newPose) {
+        gyroOffset = gyroOffset.minus(getGyroHeading()).plus(newPose.getRotation());
         poseEstimator.resetPosition(getGyroHeading(), modulePositions, newPose);
     }
 }

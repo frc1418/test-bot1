@@ -95,6 +95,8 @@ public class DriveSubsystem extends SubsystemBase {
 
     private final TargetSpaceOdometry targetOdometry;
 
+    private Optional<SwerveModulePosition[]> swerveModulePositions;
+
     private ChassisSpeeds speeds = new ChassisSpeeds(0, 0, 0);
 
     //This PID controller is used to keep the robot facing the same direction when not rotating
@@ -110,9 +112,10 @@ public class DriveSubsystem extends SubsystemBase {
     RobotConfig config;
 
     public DriveSubsystem() {
+        swerveModulePositions = getModulePositions();
         ally = DriverStation.getAlliance();
-        fieldOdometry = new FieldSpaceOdometry(getModulePositions(), ally);
-        targetOdometry = new TargetSpaceOdometry(getModulePositions(), fieldOdometry);
+        fieldOdometry = new FieldSpaceOdometry(swerveModulePositions.get(), ally);
+        targetOdometry = new TargetSpaceOdometry(swerveModulePositions.get(), fieldOdometry);
         resetLockRot();
 
         try{
@@ -146,13 +149,24 @@ public class DriveSubsystem extends SubsystemBase {
         );
     }
 
-    public SwerveModulePosition[] getModulePositions() {
-        return new SwerveModulePosition[] {
-            frontLeftWheel.getPosition(),
-            frontRightWheel.getPosition(),
-            backLeftWheel.getPosition(),
-            backRightWheel.getPosition()
-        };
+    private Optional<SwerveModulePosition[]> getModulePositions() {
+        SwerveModulePosition frontLeftPos = frontLeftWheel.getPosition();
+        SwerveModulePosition frontRightPos = frontRightWheel.getPosition();
+        SwerveModulePosition backLeftPos = backLeftWheel.getPosition();
+        SwerveModulePosition backRightPos = backRightWheel.getPosition();
+        
+        if (frontLeftPos != null && frontRightPos != null 
+        && backLeftPos != null && backRightPos != null) {
+            return Optional.of(new SwerveModulePosition[] {
+                frontLeftPos,
+                frontRightPos,
+                backLeftPos,
+                backRightPos
+            });
+        }
+        else {
+            return null;
+        }
     }
 
     public void drive(double x, double y, double rot) {
@@ -292,21 +306,27 @@ public class DriveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        fieldOdometry.update(getModulePositions(), lockedRot);
-        targetOdometry.update(getModulePositions());
+        swerveModulePositions = getModulePositions();
+        if (swerveModulePositions.isPresent()) {
+            fieldOdometry.update(getModulePositions().get(), lockedRot);
+            targetOdometry.update(getModulePositions().get());
 
-        ntBackLeftAngleEncoder.setDouble(backLeftWheel.getPosition().angle.getRadians());
-        ntBackRightAngleEncoder.setDouble(backRightWheel.getPosition().angle.getRadians());
-        ntFrontLeftAngleEncoder.setDouble(frontLeftWheel.getPosition().angle.getRadians());
-        ntFrontRightAngleEncoder.setDouble(frontRightWheel.getPosition().angle.getRadians());
+            ntFrontLeftAngleEncoder.setDouble(swerveModulePositions.get()[0].angle.getRadians());
+            ntFrontRightAngleEncoder.setDouble(swerveModulePositions.get()[1].angle.getRadians());
+            ntBackLeftAngleEncoder.setDouble(swerveModulePositions.get()[2].angle.getRadians());
+            ntBackRightAngleEncoder.setDouble(swerveModulePositions.get()[3].angle.getRadians());
 
-        ntBackLeftSpeed.setDouble(backLeftWheel.getState().speedMetersPerSecond);
-        ntBackRightSpeed.setDouble(backRightWheel.getState().speedMetersPerSecond);
-        ntFrontLeftSpeed.setDouble(frontLeftWheel.getState().speedMetersPerSecond);
-        ntFrontRightSpeed.setDouble(frontRightWheel.getState().speedMetersPerSecond);
+            ntBackLeftSpeed.setDouble(backLeftWheel.getState().speedMetersPerSecond);
+            ntBackRightSpeed.setDouble(backRightWheel.getState().speedMetersPerSecond);
+            ntFrontLeftSpeed.setDouble(frontLeftWheel.getState().speedMetersPerSecond);
+            ntFrontRightSpeed.setDouble(frontRightWheel.getState().speedMetersPerSecond);
+        }
+        else {
+            fieldOdometry.update(null, lockedRot);
+            targetOdometry.update(null);
+        }
 
         ntIsFieldCentric.setBoolean(fieldCentric);
-
         ntHeading.setDouble(fieldOdometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(lockedRot);
         ntEstimatedRot.setDouble(fieldOdometry.getEstimatedRot().getDegrees());

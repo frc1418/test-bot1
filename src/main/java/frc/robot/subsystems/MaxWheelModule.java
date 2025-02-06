@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -64,9 +65,15 @@ public class MaxWheelModule extends SubsystemBase {
   }
 
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(
-        speedEncoder.getPosition(),
-        new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset));
+    double position = speedEncoder.getPosition();
+    Rotation2d angle = new Rotation2d(angleEncoder.getPosition() - chassisAngularOffset);
+
+    boolean noErrors = checkError();
+
+    if (!noErrors)
+      return null;
+    else
+      return new SwerveModulePosition(position, angle);
   }
 
   public SwerveModuleState getState() {
@@ -81,6 +88,22 @@ public class MaxWheelModule extends SubsystemBase {
 
     setWheelSpeed(desiredState.speedMetersPerSecond);
     setWheelAngle(desiredState.angle.getRadians());
+  }
+
+  public boolean checkError() {
+    if (speedMotor.getLastError() == REVLibError.kOk) {
+      if (angleMotor.getLastError() == REVLibError.kOk) {
+        return true;
+      }
+      else {
+        System.out.println("Error with angle motor: " + angleMotor.getDeviceId());
+        return false;
+      }
+    }
+    else {
+      System.out.println("Error with speed motor: " + speedMotor.getDeviceId());
+      return false;
+    }
   }
 
   public void setWheelSpeed(double speed) {

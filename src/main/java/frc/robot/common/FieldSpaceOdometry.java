@@ -116,7 +116,9 @@ public class FieldSpaceOdometry {
     }
 
     public void update(SwerveModulePosition[] modulePositions, double lockedRot) {
-        this.modulePositions = modulePositions;
+        if (modulePositions != null) {
+            this.modulePositions = modulePositions;
+        }
         if (DriverStation.isEnabled()) {
             rotJustCorrected = false;
             boolean rejectVision = false;
@@ -132,7 +134,7 @@ public class FieldSpaceOdometry {
 
             if (correctRot) {
                 megaTag2 = true;
-                poseEstimator.update(getGyroHeading(), modulePositions);
+                poseEstimator.update(getGyroHeading(), this.modulePositions);
             }
 
             if (poseFromAprilTags == null) {

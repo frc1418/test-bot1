@@ -32,13 +32,15 @@ public class TargetSpaceOdometry {
                 );
             }
         }
-        else {
+        else if (modulePositions != null) {
             Rotation2d deltaGyro = fieldSpaceOdometry.getGyroHeading().minus(oldGyro);
             odometry.update(odometry.getPoseMeters().getRotation().minus(deltaGyro), newPositions);
         }
 
-        oldGyro = fieldSpaceOdometry.getGyroHeading();
-        modulePositions = newPositions;
+        if (newPositions != null) {
+            oldGyro = fieldSpaceOdometry.getGyroHeading();
+            modulePositions = newPositions;
+        }
     }
 
     public void reset(Pose2d pose) {

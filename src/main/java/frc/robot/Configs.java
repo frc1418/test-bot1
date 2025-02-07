@@ -12,7 +12,7 @@ public final class Configs {
 
         static {
             speedConfig
-                .idleMode(IdleMode.kBrake)
+                .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(50);
             speedConfig.encoder
                 .positionConversionFactor(EncoderConstants.ROTATIONS_TO_METERS)

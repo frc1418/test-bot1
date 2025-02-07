@@ -75,7 +75,14 @@ public final class Constants {
   }
 
   public final static class EncoderConstants {
-    public final static double ROTATIONS_TO_METERS = 0.33/8.33 * 1.17;
+    /*
+     * Conversion factor from motor rotations to meters
+     * 1.5 is the wheel radius in inches
+     * 0.0254 converts the radius to meters
+     * 2 Pi converts to radius to circumference
+     * 5.08 is the gear ratio between the motor and the wheel
+     */
+    public final static double ROTATIONS_TO_METERS = 1.5*0.0254*2*Math.PI/5.08; 
     public final static double TURNING_FACTOR = 2 * Math.PI;
   }
 }

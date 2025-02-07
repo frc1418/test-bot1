@@ -76,15 +76,20 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     private final NetworkTable table = ntInstance.getTable("/components/drivetrain");
 
-    private final NetworkTableEntry ntBackRightAngleEncoder = table.getEntry("backRightAngleEncoder");
-    private final NetworkTableEntry ntBackLeftAngleEncoder = table.getEntry("backLeftAngleEncoder");
-    private final NetworkTableEntry ntFrontRightAngleEncoder = table.getEntry("frontRightAngleEncoder");
     private final NetworkTableEntry ntFrontLeftAngleEncoder = table.getEntry("frontLeftAngleEncoder");
+    private final NetworkTableEntry ntFrontRightAngleEncoder = table.getEntry("frontRightAngleEncoder");
+    private final NetworkTableEntry ntBackLeftAngleEncoder = table.getEntry("backLeftAngleEncoder");
+    private final NetworkTableEntry ntBackRightAngleEncoder = table.getEntry("backRightAngleEncoder");
 
-    private final NetworkTableEntry ntBackRightSpeed = table.getEntry("backRightSpeed");
-    private final NetworkTableEntry ntBackLeftSpeed = table.getEntry("backLeftSpeed");
-    private final NetworkTableEntry ntFrontRightSpeed = table.getEntry("frontRightSpeed");
     private final NetworkTableEntry ntFrontLeftSpeed = table.getEntry("frontLeftSpeed");
+    private final NetworkTableEntry ntFrontRightSpeed = table.getEntry("frontRightSpeed");
+    private final NetworkTableEntry ntBackLeftSpeed = table.getEntry("backLeftSpeed");
+    private final NetworkTableEntry ntBackRightSpeed = table.getEntry("backRightSpeed");
+
+    private final NetworkTableEntry ntFrontLeftPos = table.getEntry("frontLeftPos");
+    private final NetworkTableEntry ntFrontRightPos = table.getEntry("frontRightPos");
+    private final NetworkTableEntry ntBackLeftPos = table.getEntry("backLeftPos");
+    private final NetworkTableEntry ntBackRightPos = table.getEntry("backRightPos");
 
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
@@ -316,10 +321,15 @@ public class DriveSubsystem extends SubsystemBase {
             ntBackLeftAngleEncoder.setDouble(swerveModulePositions.get()[2].angle.getRadians());
             ntBackRightAngleEncoder.setDouble(swerveModulePositions.get()[3].angle.getRadians());
 
-            ntBackLeftSpeed.setDouble(backLeftWheel.getState().speedMetersPerSecond);
-            ntBackRightSpeed.setDouble(backRightWheel.getState().speedMetersPerSecond);
             ntFrontLeftSpeed.setDouble(frontLeftWheel.getState().speedMetersPerSecond);
             ntFrontRightSpeed.setDouble(frontRightWheel.getState().speedMetersPerSecond);
+            ntBackLeftSpeed.setDouble(backLeftWheel.getState().speedMetersPerSecond);
+            ntBackRightSpeed.setDouble(backRightWheel.getState().speedMetersPerSecond);
+
+            ntFrontLeftPos.setDouble(swerveModulePositions.get()[0].distanceMeters);
+            ntFrontRightPos.setDouble(swerveModulePositions.get()[1].distanceMeters);
+            ntBackLeftPos.setDouble(swerveModulePositions.get()[2].distanceMeters);
+            ntBackRightPos.setDouble(swerveModulePositions.get()[3].distanceMeters);
         }
         else {
             fieldOdometry.update(null, lockedRot);

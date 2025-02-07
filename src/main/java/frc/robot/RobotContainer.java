@@ -6,18 +6,29 @@ package frc.robot;
 
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
-import frc.robot.commands.AlignByAprilTagGyro;
+import frc.robot.commands.AlignByFieldPose;
 import frc.robot.commands.AlignByAprilTagLL;
 import frc.robot.commands.AlignRot;
 import frc.robot.subsystems.DriveSubsystem;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.events.EventTrigger;
+
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 
 
 public class RobotContainer {
   
+  private final SendableChooser<Command> autoChooser;
+
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
 
   SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
@@ -27,12 +38,18 @@ public class RobotContainer {
   CommandJoystick rightJoystick = new CommandJoystick(1);
   CommandJoystick altJoystick = new CommandJoystick(2);
 
-  private final AlignByAprilTagGyro alignByCoralStation = new AlignByAprilTagGyro(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByFieldPose alignByCoralStation = new AlignByFieldPose(driveSubsystem, 16.177, 6.273, 56.7, 0.7, 0.1, 0.1, 3);
+  private final AlignByFieldPose alignByAutoStart = new AlignByFieldPose(driveSubsystem, 17, 5, 0, 0.7, 0.1, 0.1, 3);
   private final AlignByAprilTagLL alignByAprilTagLL = new AlignByAprilTagLL(driveSubsystem, 0.0, -1.75, 0.3, 0.1, 0.1, 0);
   private final AlignRot alignRot = new AlignRot(this, driveSubsystem, leftJoystick, 0);
   
   public RobotContainer() {
     configureBindings();
+
+    // Build an auto chooser. This will use Commands.none() as the default option.
+     autoChooser = AutoBuilder.buildAutoChooser("Test");
+     autoChooser.setDefaultOption("Default Path", null);
+     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
   private void configureBindings() {
@@ -48,6 +65,7 @@ public class RobotContainer {
     leftJoystick.button(1).onTrue(driveSubsystem.toggleFieldCentric());
     leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
     leftJoystick.button(3).whileTrue(alignByAprilTagLL);
+    leftJoystick.button(4).whileTrue(alignByAutoStart);
 
     rightJoystick.button(1).whileTrue(alignRot);
     rightJoystick.button(2).whileTrue(alignByCoralStation);
@@ -65,7 +83,11 @@ public class RobotContainer {
       input;
   }
 
+  public void resetLockRot() {
+    driveSubsystem.resetLockRot();
+  }
+
   public Command getAutonomousCommand() {
-    return null;
+    return autoChooser.getSelected();
   }
 }

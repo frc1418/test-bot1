@@ -12,16 +12,14 @@ public final class Configs {
 
         static {
             speedConfig
-                .idleMode(IdleMode.kBrake)
+                .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(50);
             speedConfig.encoder
                 .positionConversionFactor(EncoderConstants.ROTATIONS_TO_METERS)
                 .velocityConversionFactor(EncoderConstants.ROTATIONS_TO_METERS/60.0);
 
             speedConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(0.001, 0.0, 0.0)
-                .velocityFF(0.25);
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
             angleConfig
                 .idleMode(IdleMode.kBrake)
@@ -36,6 +34,14 @@ public final class Configs {
                 .outputRange(-1, 1)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(0, EncoderConstants.TURNING_FACTOR);
+        }
+
+        public static SparkMaxConfig getSpeedConfig() {
+            return speedConfig;
+        }
+
+        public static SparkMaxConfig getAngleConfig() {
+            return angleConfig;
         }
     }
 }

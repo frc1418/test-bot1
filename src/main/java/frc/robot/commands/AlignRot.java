@@ -23,6 +23,7 @@ public class AlignRot extends Command {
     FieldSpaceOdometry odometry;
 
     CommandJoystick leftJoystick;
+    CommandJoystick rightJoystick;
 
     double targetRot;
 
@@ -45,7 +46,7 @@ public class AlignRot extends Command {
             }
         }
 
-        speedRotController = new PIDController(0.005, 0.0004, 0);
+        speedRotController = new PIDController(0.015, 0, 0.0005);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);
@@ -60,6 +61,13 @@ public class AlignRot extends Command {
     // Called every time the scheduler runs while the command is scheduled.
     @Override
     public void execute() {
+        if (!ally.isPresent()) {
+            ally = DriverStation.getAlliance();
+            if (ally.get() == Alliance.Red) {
+                this.targetRot += 180;
+            }
+        }
+
         if (swerveDrive.getCorrectRot()) {
             double rot = speedRotController.calculate(odometry.getPose().getRotation().getDegrees(), targetRot);
 

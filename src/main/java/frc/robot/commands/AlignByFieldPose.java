@@ -1,5 +1,7 @@
 package frc.robot.commands;
 
+import com.pathplanner.lib.config.RobotConfig;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -10,26 +12,19 @@ import frc.robot.common.FieldSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
 
 public class AlignByFieldPose extends Command {
-
-    PIDController speedXController;
-    PIDController speedYController;
-
-    PIDController speedRotController;
-
     DriveSubsystem swerveDrive;
     FieldSpaceOdometry odometry;
 
     double targetX;
     double targetY;
-
     double targetRot;
+    double initialSpeedP;
+    double initialRotP = 0.01;
 
     boolean startedFieldCentric;
 
     PIDController speedController;
-
-    SlewRateLimiter limitX;
-    SlewRateLimiter limitY;
+    PIDController speedRotController;
 
     public AlignByFieldPose(DriveSubsystem swerveDrive, double targetX, double targetY, double targetRot, double P, double I, double D, double maxAccel) {
         this.swerveDrive = swerveDrive;
@@ -37,13 +32,11 @@ public class AlignByFieldPose extends Command {
         this.targetX = targetX;
         this.targetY = targetY;
         this.targetRot = targetRot;
+        this.initialSpeedP = P;
        
-        limitX = new SlewRateLimiter(maxAccel);
-        limitY = new SlewRateLimiter(maxAccel);
         speedController = new PIDController(P, I, D);
-        speedController.setTolerance(0.2);
+        speedController.setTolerance(0.05);
         speedRotController = new PIDController(0.01, 0, 0);
-        speedRotController.setTolerance(0.01);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);
@@ -55,8 +48,6 @@ public class AlignByFieldPose extends Command {
     public void initialize() {
         this.startedFieldCentric = swerveDrive.getFieldCentric();
         this.swerveDrive.setFieldCentric(false);
-
-        swerveDrive.drive(limitX.calculate(0),limitY.calculate(0),0);
     }
 
     // Called every time the scheduler runs while the command is scheduled.
@@ -69,23 +60,37 @@ public class AlignByFieldPose extends Command {
             double x;
             double y;
             double rot;
+            double speed;
 
             double dx = targetPose.getX() - odometry.getPose().getX();
             double dy =  targetPose.getY() - odometry.getPose().getY();
 
             double distance = Math.hypot(dx, dy);
             double angleToTarget = Math.atan2(dy, dx) * 180 / Math.PI;
+            double deltaRot = Math.abs(targetRot - odometry.getGyroHeading().getDegrees());
 
+            if (deltaRot < 5.5) {
+                speedRotController.setP(initialRotP/((deltaRot+0.5)/6));
+            }
             rot = speedRotController.calculate(odometry.getGyroHeading().getDegrees(), targetRot);
 
-            double speed = speedController.calculate(0, distance);
+            if (distance < 0.9) {
+                speedController.setP(initialSpeedP/(distance+0.1));
+            }
+            speed = speedController.calculate(0, distance);
 
             Rotation2d direction = Rotation2d.fromDegrees(angleToTarget - odometry.getGyroHeading().getDegrees());
 
-            x = (direction.getCos() * speed);
-            y = (direction.getSin() * speed);
+            if (!speedController.atSetpoint()) {
+                x = (direction.getCos() * speed);
+                y = (direction.getSin() * speed);
+            }
+            else {
+                x = 0;
+                y = 0;
+            }
 
-            swerveDrive.drive(limitX.calculate(x), limitY.calculate(y), rot);        
+            swerveDrive.drive(x, y, rot);        
         }
     }
 
@@ -94,7 +99,9 @@ public class AlignByFieldPose extends Command {
     public void end(boolean interrupted) {
         System.out.println("END");
         speedController.reset();
+        speedController.setP(initialSpeedP);
         speedRotController.reset();
+        speedRotController.setP(initialRotP);
         this.swerveDrive.setFieldCentric(startedFieldCentric);
         swerveDrive.drive(0, 0, 0);
     }

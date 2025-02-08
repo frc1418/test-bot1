@@ -8,6 +8,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -92,12 +93,13 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableEntry ntBackRightPos = table.getEntry("backRightPos");
 
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
+    private final NetworkTableEntry ntIsSlowMode = table.getEntry("isSlowMode");
+
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
     private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
     private final NetworkTableEntry ntEstimatedRot = table.getEntry("estimatedRot");
 
     private final FieldSpaceOdometry fieldOdometry;
-
     private final TargetSpaceOdometry targetOdometry;
 
     private Optional<SwerveModulePosition[]> swerveModulePositions;
@@ -107,12 +109,16 @@ public class DriveSubsystem extends SubsystemBase {
     //This PID controller is used to keep the robot facing the same direction when not rotating
     private PIDController rotationController = new PIDController(DriverConstants.baseCorrector, 0, 0); 
 
+    private SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
+    private SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
+
     private double lockedRot;
     private double previousRot = 0;
 
     private Optional<Alliance> ally;
 
     private boolean fieldCentric = true;
+    private boolean slowMode = false;
 
     RobotConfig config;
 
@@ -175,6 +181,15 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
+        if (slowMode) {
+             x *= 0.5;
+             y *= 0.5;
+             rot *= 0.5;
+        }
+
+        x = limitX.calculate(x);
+        y = limitY.calculate(y);
+
         if (Math.abs(rot - previousRot) > DriverConstants.maxAngularAccel && Math.abs(rot) > Math.abs(previousRot)) {
             rot = previousRot+DriverConstants.maxAngularAccel*Math.signum(rot);
         }
@@ -295,6 +310,12 @@ public class DriveSubsystem extends SubsystemBase {
         });
     }
 
+    public Command setSlowMode(boolean setting) {
+        return Commands.runOnce(() -> {
+            slowMode = setting;
+        });
+    }
+
     public Command toggleFieldCentric() {
         return Commands.runOnce(() -> {
             fieldCentric = !fieldCentric;
@@ -337,6 +358,8 @@ public class DriveSubsystem extends SubsystemBase {
         }
 
         ntIsFieldCentric.setBoolean(fieldCentric);
+        ntIsSlowMode.setBoolean(slowMode);
+
         ntHeading.setDouble(fieldOdometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(lockedRot);
         ntEstimatedRot.setDouble(fieldOdometry.getEstimatedRot().getDegrees());

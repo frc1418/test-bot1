@@ -3,13 +3,11 @@ package frc.robot.commands;
 import java.util.Optional;
 
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import frc.robot.RobotContainer;
-import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.common.FieldSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
@@ -26,11 +24,9 @@ public class AlignRot extends Command {
     CommandJoystick rightJoystick;
 
     double targetRot;
+    double initialRotP = 0.01;
 
     Optional<Alliance> ally;
-
-    SlewRateLimiter limitX = new SlewRateLimiter(DriverConstants.maxAccel);
-    SlewRateLimiter limitY = new SlewRateLimiter(DriverConstants.maxAccel);
 
     public AlignRot(RobotContainer robotContainer, DriveSubsystem swerveDrive, CommandJoystick leftJoystick, double targetRot) {
 
@@ -46,7 +42,8 @@ public class AlignRot extends Command {
             }
         }
 
-        speedRotController = new PIDController(0.015, 0, 0.0005);
+        speedRotController = new PIDController(0.01, 0, 0);
+        speedRotController.setTolerance(0.1);
         speedRotController.enableContinuousInput(-180, 180);
 
         addRequirements(swerveDrive);
@@ -55,7 +52,7 @@ public class AlignRot extends Command {
     // Called when the command is initially scheduled.
     @Override
     public void initialize() {
-        swerveDrive.drive(limitX.calculate(0),limitY.calculate(0),0);
+        swerveDrive.drive(0, 0, 0);
     }
 
     // Called every time the scheduler runs while the command is scheduled.
@@ -68,12 +65,21 @@ public class AlignRot extends Command {
             }
         }
 
+        double deltaRot = Math.abs(targetRot - odometry.getGyroHeading().getDegrees());
+
+        if (deltaRot < 2.5) {
+            speedRotController.setP(initialRotP/((deltaRot+0.5)/3));
+        }
+
         if (swerveDrive.getCorrectRot()) {
             double rot = speedRotController.calculate(odometry.getPose().getRotation().getDegrees(), targetRot);
 
+        if (speedRotController.atSetpoint()) {
+            rot = 0;
+        }
             swerveDrive.drive(
-                -limitX.calculate(robotContainer.applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND)),
-                -limitY.calculate(robotContainer.applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND)),
+                -robotContainer.applyDeadband(leftJoystick.getY(), DrivetrainConstants.DRIFT_DEADBAND),
+                -robotContainer.applyDeadband(leftJoystick.getX(), DrivetrainConstants.DRIFT_DEADBAND),
                 rot
             );
         }
@@ -84,6 +90,7 @@ public class AlignRot extends Command {
     public void end(boolean interrupted) {
         System.out.println("END");
         speedRotController.reset();
+        speedRotController.setP(initialRotP);
         swerveDrive.drive(0, 0, 0);
     }
 

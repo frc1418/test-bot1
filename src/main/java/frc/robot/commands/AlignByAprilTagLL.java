@@ -10,10 +10,6 @@ import frc.robot.common.TargetSpaceOdometry;
 import frc.robot.subsystems.DriveSubsystem;
 
 public class AlignByAprilTagLL extends Command {
-
-    PIDController speedXController;
-    PIDController speedYController;
-
     PIDController speedRotController;
 
     DriveSubsystem swerveDrive;
@@ -27,9 +23,6 @@ public class AlignByAprilTagLL extends Command {
 
     PIDController speedController;
 
-    SlewRateLimiter limitX = new SlewRateLimiter(1.5);
-    SlewRateLimiter limitY = new SlewRateLimiter(1.5);
-
     public AlignByAprilTagLL(DriveSubsystem swerveDrive, double targetX, double targetY, double P, double I, double D, double targetRot) {
 
         this.swerveDrive = swerveDrive;
@@ -39,6 +32,7 @@ public class AlignByAprilTagLL extends Command {
         this.targetRot = targetRot;
     
         speedController = new PIDController(P, I, D);
+        speedController.setTolerance(0.05);
         speedRotController = new PIDController(0.01, 0, 0);
         speedRotController.enableContinuousInput(-180, 180);
 
@@ -52,7 +46,7 @@ public class AlignByAprilTagLL extends Command {
         this.startedFieldCentric = swerveDrive.getFieldCentric();
         this.swerveDrive.setFieldCentric(false);
 
-        swerveDrive.drive(limitX.calculate(0),limitY.calculate(0),0);
+        swerveDrive.drive(0,0,0);
     }
 
     // Called every time the scheduler runs while the command is scheduled.
@@ -82,10 +76,16 @@ public class AlignByAprilTagLL extends Command {
 
         Rotation2d direction = Rotation2d.fromDegrees(angleToTarget + robotPose.getRotation().getDegrees());
 
-        x = direction.getCos() * speed;
-        y = direction.getSin() * speed;
+        if (!speedController.atSetpoint()) {
+            x = direction.getCos() * speed;
+            y = direction.getSin() * speed;
+        }
+        else {
+            x = 0;
+            y = 0;
+        }
 
-        swerveDrive.drive(limitX.calculate(x), limitY.calculate(y), rot);        
+        swerveDrive.drive(x, y, rot);        
     }
 
     // Called once the command ends or is interrupted.

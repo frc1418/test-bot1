@@ -6,7 +6,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -22,6 +21,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriverConstants;
 import frc.robot.Constants.DrivetrainConstants;
@@ -93,7 +93,7 @@ public class DriveSubsystem extends SubsystemBase {
     private final NetworkTableEntry ntBackRightPos = table.getEntry("backRightPos");
 
     private final NetworkTableEntry ntIsFieldCentric = table.getEntry("isFieldCentric");
-    private final NetworkTableEntry ntIsSlowMode = table.getEntry("isSlowMode");
+    private final NetworkTableEntry ntIsTempSlowMode = table.getEntry("isTempSlowMode");
 
     private final NetworkTableEntry ntHeading = table.getEntry("heading");
     private final NetworkTableEntry ntLockedRot = table.getEntry("lockedRot");
@@ -118,7 +118,9 @@ public class DriveSubsystem extends SubsystemBase {
     private Optional<Alliance> ally;
 
     private boolean fieldCentric = true;
-    private boolean slowMode = false;
+    private boolean tempSlowMode = false;
+    private boolean permSlowMode = true;
+    private boolean limitDrive = true;
 
     RobotConfig config;
 
@@ -181,14 +183,21 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public void drive(double x, double y, double rot) {
-        if (slowMode) {
+        if (tempSlowMode) {
              x *= 0.5;
              y *= 0.5;
              rot *= 0.5;
         }
+        if (permSlowMode) {
+            x *= 0.66;
+            y *= 0.66;
+            rot *= 0.66;
+        }
 
-        x = limitX.calculate(x);
-        y = limitY.calculate(y);
+        if (limitDrive) {
+            x = limitX.calculate(x);
+            y = limitY.calculate(y);
+        }
 
         if (Math.abs(rot - previousRot) > DriverConstants.maxAngularAccel && Math.abs(rot) > Math.abs(previousRot)) {
             rot = previousRot+DriverConstants.maxAngularAccel*Math.signum(rot);
@@ -253,13 +262,6 @@ public class DriveSubsystem extends SubsystemBase {
         backRightWheel.setDesiredState(wheelStates[3]);
     }
 
-    public void turtle() {
-        frontLeftWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
-        frontRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-        backLeftWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-        backRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
-    }
-
     public void setFieldCentric(boolean fieldCentric) {
         this.fieldCentric = fieldCentric;
     }
@@ -310,9 +312,29 @@ public class DriveSubsystem extends SubsystemBase {
         });
     }
 
-    public Command setSlowMode(boolean setting) {
+    public Command setTempSlowMode(boolean setting) {
         return Commands.runOnce(() -> {
-            slowMode = setting;
+            tempSlowMode = setting;
+        });
+    }
+
+    public Command turtle() {
+        return new RunCommand(() -> {
+            frontLeftWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+            frontRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
+            backLeftWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
+            backRightWheel.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+        }, this);
+    }
+
+    public Command toggleFastMode() {
+        return Commands.runOnce(() -> {
+            limitDrive = !limitDrive;
+            permSlowMode = !permSlowMode;
+            System.out.println("Slow mode: " + permSlowMode);
+            System.out.println("limit drive: " + limitDrive);
+            limitX.reset(0);
+            limitY.reset(0);
         });
     }
 
@@ -358,7 +380,7 @@ public class DriveSubsystem extends SubsystemBase {
         }
 
         ntIsFieldCentric.setBoolean(fieldCentric);
-        ntIsSlowMode.setBoolean(slowMode);
+        ntIsTempSlowMode.setBoolean(tempSlowMode);
 
         ntHeading.setDouble(fieldOdometry.getGyroHeading().getDegrees());
         ntLockedRot.setDouble(lockedRot);

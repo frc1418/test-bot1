@@ -2,7 +2,6 @@ package frc.robot.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import com.studica.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -14,7 +13,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.DrivetrainConstants;
 
 public class FieldSpaceOdometry {

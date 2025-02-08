@@ -12,7 +12,7 @@ public final class Constants {
 
     public static final double wheelPos = 0.2978;
 
-    public static final double DRIFT_DEADBAND = 0.1;
+    public static final double DRIFT_DEADBAND = 0.15;
     public static final double ROTATION_DEADBAND = 0.03;
 
     public static final int FRONT_LEFT_ANGLE_ID = 3;
@@ -66,9 +66,9 @@ public final class Constants {
 
   public final static class DriverConstants {
     public final static double maxAccel = 1.5;
-    public final static double maxSpeedMetersPerSecond = 4.8;
-    public final static double maxAngularAccel = 0.075;
-    public final static double maxAngularSpeed = 2*Math.PI;
+    public final static double maxSpeedMetersPerSecond = 4.8*1.5;
+    public final static double maxAngularAccel = 0.075*1.5;
+    public final static double maxAngularSpeed = 2*Math.PI*1.5;
     public final static double maxCorrectiveAngularSpeed = Math.PI;
     public final static double correctiveFactor = 0.16;
     public final static double baseCorrector = 0.04;

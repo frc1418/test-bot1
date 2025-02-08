@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 
-
 public class RobotContainer {
   
   private final SendableChooser<Command> autoChooser;
@@ -51,20 +50,19 @@ public class RobotContainer {
     }, driveSubsystem));
 
 
-    leftJoystick.button(1).onTrue(driveSubsystem.setSlowMode(true));
-    leftJoystick.button(1).onFalse(driveSubsystem.setSlowMode(false));
-    leftJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
+    leftJoystick.button(1).onTrue(driveSubsystem.setTempSlowMode(true));
+    leftJoystick.button(1).onFalse(driveSubsystem.setTempSlowMode(false));
+    leftJoystick.button(2).whileTrue(alignByCoralStation);
     leftJoystick.button(3).whileTrue(alignByAprilTagLL);
     leftJoystick.button(4).whileTrue(alignByAutoStart);
     leftJoystick.button(5).onTrue(driveSubsystem.toggleFieldCentric());
+    leftJoystick.button(6).onTrue(driveSubsystem.toggleFastMode());
 
     rightJoystick.button(1).whileTrue(alignRot);
-    rightJoystick.button(2).whileTrue(alignByCoralStation);
+    rightJoystick.button(2).onTrue(driveSubsystem.resetFieldCentric());
     rightJoystick.button(3).whileTrue(driveSubsystem.getRotError());
     rightJoystick.button(3).onFalse(driveSubsystem.correctError());
-    rightJoystick.button(4).whileTrue(new RunCommand(() -> {
-      driveSubsystem.turtle();
-    }, driveSubsystem));
+    rightJoystick.button(4).whileTrue(driveSubsystem.turtle());
   }
 
   public double applyDeadband(double input, double deadband) {
